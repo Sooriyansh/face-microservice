@@ -22,6 +22,19 @@ async function fetchJson(url, options = {}) {
   return payload;
 }
 
+function showToast(message) {
+  const stack = document.getElementById('toast-stack');
+  if (!stack || !message) {
+    return;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  stack.appendChild(toast);
+  window.setTimeout(() => toast.remove(), 3600);
+}
+
 function createCell(value) {
   const cell = document.createElement('td');
   cell.textContent = value;
@@ -381,6 +394,7 @@ function setRecognitionResult(message, isSuccess = false, studentName = null, co
       result.textContent = displayMsg;
       result.classList.add('status-success');
       result.classList.remove('status-error');
+      showToast(displayMsg);
     } else {
       result.textContent = message;
       result.classList.add('status-error');
@@ -763,6 +777,7 @@ if (studentForm) {
 
       if (formStatus) {
         formStatus.textContent = 'Teacher saved and the model was trained. Open the attendance page to test it.';
+        showToast('Identity saved, Cloudinary synced, and AI model trained.');
       }
 
       studentForm.reset();
@@ -773,6 +788,7 @@ if (studentForm) {
     } catch (error) {
       if (formStatus) {
         formStatus.textContent = error.message;
+        showToast(error.message);
       }
     } finally {
       if (submitButton) {
@@ -851,3 +867,52 @@ if (navbarRefreshButton) {
     }
   });
 }
+
+const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+const navbarMenu = document.querySelector('.navbar-menu');
+if (mobileMenuToggle && navbarMenu) {
+  mobileMenuToggle.addEventListener('click', () => {
+    navbarMenu.classList.toggle('open');
+  });
+}
+
+const profileTrigger = document.querySelector('.profile-trigger');
+const profileMenu = document.querySelector('.profile-menu');
+if (profileTrigger && profileMenu) {
+  profileTrigger.addEventListener('click', () => {
+    profileMenu.classList.toggle('open');
+  });
+}
+
+const themeToggle = document.querySelector('.theme-toggle');
+if (themeToggle) {
+  const savedTheme = localStorage.getItem('faceai-theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+  }
+
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    localStorage.setItem('faceai-theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+  });
+}
+
+document.querySelectorAll('.counter[data-count]').forEach((counter) => {
+  const target = Number(counter.dataset.count || 0);
+  const suffix = counter.textContent.trim().endsWith('%') ? '%' : '';
+  let current = 0;
+  const steps = 28;
+  const increment = target / steps;
+
+  const tick = () => {
+    current += increment;
+    if (current >= target) {
+      counter.textContent = `${target}${suffix}`;
+      return;
+    }
+    counter.textContent = `${Math.round(current)}${suffix}`;
+    window.requestAnimationFrame(tick);
+  };
+
+  tick();
+});

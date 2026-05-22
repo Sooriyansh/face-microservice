@@ -3,100 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Dashboard</title>
+    <title>Live Attendance Scanner</title>
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="noise-layer"></div>
+
     <nav class="navbar">
         <div class="navbar-container">
-            <div class="navbar-brand">
-                <a href="/" class="navbar-logo">
-                    <span class="logo-icon"><i class="fa-solid fa-users"></i></span>
-                    <span class="logo-text">Face Attendance</span>
-                </a>
-            </div>
+            <a href="/" class="navbar-logo">
+                <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                <span class="logo-text">FaceAI<span>Attend</span></span>
+            </a>
+            <button class="mobile-menu-toggle" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
             <div class="navbar-menu">
-                <a href="/" class="navbar-link">
-                    <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
-                    Home
-                </a>
-                <a href="/attendance" class="navbar-link active">
-                    <span class="nav-icon"><i class="fa-solid fa-camera"></i></span>
-                    Start Attendance
-                </a>
-                <a href="/system-events" class="navbar-link">
-                    <span class="nav-icon"><i class="fa-solid fa-desktop"></i></span>
-                    System Events
-                </a>
-                <button id="navbar-refresh" class="navbar-link navbar-btn">
-                    <span class="nav-icon"><i class="fa-solid fa-rotate-right"></i></span>
-                    Refresh
-                </button>
+                <a href="/" class="navbar-link">Dashboard</a>
+                <a href="/attendance" class="navbar-link active">Attendance</a>
+                <a href="/#students" class="navbar-link">Students</a>
+                <a href="/#analytics" class="navbar-link">Analytics</a>
+                <a href="/system-events" class="navbar-link">System Events</a>
+            </div>
+            <div class="navbar-actions">
+                <button class="icon-button theme-toggle" type="button" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
+                <button id="navbar-refresh" class="icon-button" type="button" aria-label="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
         </div>
     </nav>
 
-    <main class="page-shell">
-        <section class="hero-card compact">
-            <div class="hero-copy">
-                <p class="eyebrow">Live Attendance Monitor</p>
-                <h1>Attendance Scan Page</h1>
-                <p class="hero-text">
-                    When a student appears in front of the camera, the system recognizes their face and marks today's attendance as present.
-                </p>
-                <div class="hero-actions">
-                    <a href="/" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back Home</a>
-                    <button id="refresh-attendance" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Refresh Records</button>
-                </div>
+    <main class="app-shell">
+        <section class="page-hero reveal">
+            <div>
+                <div class="status-chip"><span class="live-dot"></span> Live recognition console</div>
+                <h1>AI Attendance Scanner</h1>
+                <p>Start the camera and let the biometric engine identify registered faces in real time.</p>
+            </div>
+            <div class="hero-actions">
+                <a href="/" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
+                <button id="refresh-attendance" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Refresh Records</button>
             </div>
         </section>
 
-        <section class="panel">
-            <div class="panel-header">
-                <h2>Live Attendance Camera</h2>
-                <p>Start the camera. The page scans the teacher's face every 3 seconds and marks attendance automatically.</p>
-            </div>
-            <div class="camera-shell">
-                <div class="camera-frame">
-                    <video id="camera-feed" autoplay playsinline muted></video>
-                    <canvas id="camera-canvas" hidden></canvas>
+        <section class="scanner-layout reveal">
+            <div class="panel scanner-console">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Webcam Matrix</p>
+                        <h2>Face Detection Preview</h2>
+                    </div>
+                    <span class="panel-badge"><span class="live-dot"></span> Standby</span>
                 </div>
-                <div class="camera-controls">
-                    <button type="button" id="start-camera" class="btn btn-primary"><i class="fa-solid fa-video"></i> Start Attendance Camera</button>
-                    <button type="button" id="scan-now" class="btn btn-secondary"><i class="fa-solid fa-crosshairs"></i> Scan Now</button>
-                    <button type="button" id="stop-camera" class="btn btn-secondary"><i class="fa-solid fa-video-slash"></i> Stop Camera</button>
+                <div class="camera-shell">
+                    <div class="camera-frame scanner-frame large">
+                        <video id="camera-feed" autoplay playsinline muted></video>
+                        <canvas id="camera-canvas" hidden></canvas>
+                        <span class="camera-reticle"></span>
+                        <span class="scan-line camera-scan"></span>
+                    </div>
+                    <div class="camera-controls">
+                        <button type="button" id="start-camera" class="btn btn-primary"><i class="fa-solid fa-video"></i> Start Attendance Camera</button>
+                        <button type="button" id="scan-now" class="btn btn-secondary"><i class="fa-solid fa-crosshairs"></i> Scan Now</button>
+                        <button type="button" id="stop-camera" class="btn btn-secondary"><i class="fa-solid fa-video-slash"></i> Stop Camera</button>
+                    </div>
+                    <p id="camera-status" class="helper-text">Camera is off.</p>
+                    <p id="location-status" class="helper-text">Location tracking will ask for permission when the camera starts.</p>
+                    <p id="camera-loader" class="loading-skeleton"></p>
+                    <p id="recognition-result" class="form-status">Scanner is ready. Keep your face centered inside the frame.</p>
                 </div>
-                <p id="camera-status" class="helper-text">Camera is off.</p>
-                <p id="location-status" class="helper-text">Location tracking will ask for permission when the camera starts.</p>
-                <p id="camera-loader" class="helper-text"></p>
-                <p id="recognition-result" class="form-status">Attendance scanner is ready. Start the camera and keep your face in front of it. The system will automatically detect the face and mark attendance.</p>
             </div>
+
+            <aside class="panel activity-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Recognition Stack</p>
+                        <h2>Live Activity</h2>
+                    </div>
+                </div>
+                <div class="activity-feed">
+                    <div><span class="live-dot"></span><strong>Camera</strong><p>Waiting for secure permission.</p></div>
+                    <div><span class="live-dot"></span><strong>AI Worker</strong><p>Python recognition service prepared.</p></div>
+                    <div><span class="live-dot"></span><strong>Database</strong><p>MongoDB Atlas attendance records synced.</p></div>
+                    <div><span class="live-dot"></span><strong>Cloud Media</strong><p>Cloudinary identity samples available.</p></div>
+                </div>
+            </aside>
         </section>
 
-        <section class="panel">
+        <section class="panel reveal">
             <div class="panel-header">
-                <h2>Today Records</h2>
+                <div>
+                    <p class="eyebrow">Today</p>
+                    <h2>Attendance Records</h2>
+                </div>
                 <p id="attendance-page-status" class="helper-text">Latest records shown below.</p>
             </div>
             <div class="table-wrap">
                 <table>
                     <thead>
-                        <tr>
-                            <th><i class="fa-solid fa-user-check"></i> Name</th>
-                            <th><i class="fa-solid fa-tag"></i> Label</th>
-                            <th><i class="fa-solid fa-clock"></i> Marked At</th>
-                            <th><i class="fa-solid fa-shield-halved"></i> Confidence</th>
-                            <th><i class="fa-solid fa-location-dot"></i> Location</th>
-                        </tr>
+                        <tr><th>Name</th><th>Label</th><th>Marked At</th><th>Confidence</th><th>Location</th></tr>
                     </thead>
                     <tbody id="attendance-page-body">
                         <% const safeRecords = typeof records !== 'undefined' ? records : []; %>
-                        <% if (safeRecords.length === 0) { %>
-                            <tr>
-                                <td colspan="5">No records found for today.</td>
-                            </tr>
-                        <% } %>
+                        <% if (safeRecords.length === 0) { %><tr><td colspan="5">No records found for today.</td></tr><% } %>
                         <% safeRecords.forEach((record) => { %>
                             <tr>
                                 <td><%= record.student ? record.student.name : record.faceLabel %></td>
@@ -108,12 +117,8 @@
                                         <a href="https://www.google.com/maps?q=<%= record.location.latitude %>,<%= record.location.longitude %>" target="_blank" rel="noopener noreferrer">
                                             <%= Number(record.location.latitude).toFixed(5) %>, <%= Number(record.location.longitude).toFixed(5) %>
                                         </a>
-                                        <% if (record.location.accuracy) { %>
-                                            <span class="location-accuracy"> +/- <%= Math.round(record.location.accuracy) %>m</span>
-                                        <% } %>
-                                    <% } else { %>
-                                        -
-                                    <% } %>
+                                        <% if (record.location.accuracy) { %><span class="location-accuracy"> +/- <%= Math.round(record.location.accuracy) %>m</span><% } %>
+                                    <% } else { %>-<% } %>
                                 </td>
                             </tr>
                         <% }) %>
@@ -123,6 +128,7 @@
         </section>
     </main>
 
+    <div class="toast-stack" id="toast-stack"></div>
     <script src="/script.js"></script>
 </body>
 </html>
