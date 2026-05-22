@@ -1,19 +1,12 @@
 const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
-const { execFile } = require('child_process');
-const { promisify } = require('util');
 
 const Student = require('../models/Student');
 const { deleteImages, uploadImageBuffer } = require('../services/cloudinary');
+const { DATASET_ROOT, trainEmbeddings } = require('../services/faceModel');
 
 const router = express.Router();
-const execFileAsync = promisify(execFile);
-const PROJECT_ROOT = path.join(__dirname, '..');
-const DEFAULT_VENV_PYTHON = path.join(PROJECT_ROOT, '.venv', 'Scripts', 'python.exe');
-const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || DEFAULT_VENV_PYTHON;
-const DATASET_ROOT = path.join(PROJECT_ROOT, 'python', 'data', 'dataset');
-const TRAIN_SCRIPT = path.join(PROJECT_ROOT, 'python', 'train_model.py');
 
 async function saveEnrollmentImages(faceLabel, images, savedImages) {
   const labelDir = path.join(DATASET_ROOT, faceLabel);
@@ -46,19 +39,6 @@ async function saveEnrollmentImages(faceLabel, images, savedImages) {
   }
 
   return savedImages;
-}
-
-async function trainEmbeddings() {
-  await execFileAsync(PYTHON_EXECUTABLE, [TRAIN_SCRIPT], {
-    cwd: PROJECT_ROOT,
-    timeout: 300000,
-    windowsHide: true,
-    maxBuffer: 1024 * 1024,
-    env: {
-      ...process.env,
-      TF_CPP_MIN_LOG_LEVEL: '2',
-    },
-  });
 }
 
 router.get('/', async (req, res, next) => {

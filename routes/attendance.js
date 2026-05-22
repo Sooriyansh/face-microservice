@@ -6,17 +6,17 @@ const { spawn } = require('child_process');
 
 const Attendance = require('../models/Attendance');
 const Student = require('../models/Student');
+const { EMBEDDINGS_PATH, ensureFaceModelReady } = require('../services/faceModel');
+const { getPythonExecutable, PROJECT_ROOT } = require('../services/pythonRuntime');
 
 const router = express.Router();
-const PROJECT_ROOT = path.join(__dirname, '..');
-const DEFAULT_VENV_PYTHON = path.join(PROJECT_ROOT, '.venv', 'Scripts', 'python.exe');
-const PYTHON_EXECUTABLE = process.env.PYTHON_EXECUTABLE || DEFAULT_VENV_PYTHON;
 const RECOGNIZE_WORKER = path.join(PROJECT_ROOT, 'python', 'recognition_worker.py');
 let workerProcess = null;
 let workerReadyPromise = null;
 let workerStdoutBuffer = '';
 let lastWorkerError = '';
 let nextRequestId = 1;
+let workerStartedAt = 0;
 const pendingRecognitions = new Map();
 
 function normalizeLocation(location) {
@@ -164,7 +164,8 @@ function handleWorkerMessage(rawLine) {
 }
 
 function createWorkerProcess() {
-  workerProcess = spawn(PYTHON_EXECUTABLE, [RECOGNIZE_WORKER], {
+  workerStartedAt = Date.now();
+  workerProcess = spawn(getPythonExecutable(), [RECOGNIZE_WORKER], {
     cwd: PROJECT_ROOT,
     windowsHide: true,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -220,6 +221,7 @@ function createWorkerProcess() {
     }
     rejectPendingRecognitions(error.message);
     workerProcess = null;
+    workerStartedAt = 0;
   });
 
   workerProcess.on('exit', (code) => {
@@ -230,14 +232,41 @@ function createWorkerProcess() {
     }
     rejectPendingRecognitions(reason);
     workerProcess = null;
+    workerStartedAt = 0;
     workerStdoutBuffer = '';
     lastWorkerError = '';
   });
 }
 
-function getWorkerProcess() {
+async function embeddingsChangedAfterWorkerStart() {
+  if (!workerProcess || !workerStartedAt) {
+    return false;
+  }
+
+  const stats = await fs.stat(EMBEDDINGS_PATH);
+  return stats.mtimeMs > workerStartedAt;
+}
+
+function stopWorkerProcess() {
+  if (workerProcess && !workerProcess.killed) {
+    workerProcess.kill();
+  }
+
+  workerProcess = null;
+  workerStartedAt = 0;
+  workerStdoutBuffer = '';
+  lastWorkerError = '';
+}
+
+async function getWorkerProcess() {
+  await ensureFaceModelReady();
+
+  if (await embeddingsChangedAfterWorkerStart()) {
+    stopWorkerProcess();
+  }
+
   if (workerProcess && !workerProcess.killed && workerReadyPromise === null) {
-    return Promise.resolve(workerProcess);
+    return workerProcess;
   }
 
   if (workerReadyPromise) {

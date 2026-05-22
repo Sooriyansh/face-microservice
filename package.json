@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "postinstall": "node scripts/install-python-deps.js",
     "setup:python": "powershell -ExecutionPolicy Bypass -File .\\setup-python.ps1",
     "py:capture": "powershell -ExecutionPolicy Bypass -File .\\run-python.ps1 capture_faces.py",
     "py:train": "powershell -ExecutionPolicy Bypass -File .\\run-python.ps1 train_model.py",
