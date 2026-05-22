@@ -13,10 +13,6 @@ function getPythonExecutable() {
     return WINDOWS_VENV_PYTHON;
   }
 
-  if (process.env.RENDER || process.env.NODE_ENV === 'production') {
-    return 'python3';
-  }
-
   return POSIX_VENV_PYTHON;
 }
 

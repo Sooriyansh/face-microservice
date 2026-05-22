@@ -3,6 +3,11 @@ const path = require('path');
 
 const projectRoot = path.join(__dirname, '..');
 const requirementsPath = path.join(projectRoot, 'python', 'requirements-render.txt');
+const venvPath = path.join(projectRoot, '.venv');
+const venvPython =
+  process.platform === 'win32'
+    ? path.join(venvPath, 'Scripts', 'python.exe')
+    : path.join(venvPath, 'bin', 'python');
 const candidates =
   process.platform === 'win32'
     ? [
@@ -45,15 +50,12 @@ if (!python) {
   process.exit(1);
 }
 
-const installScopeArgs = process.platform !== 'win32' && !process.env.VIRTUAL_ENV ? ['--user'] : [];
-const pipResult = run(python.command, [
-  ...python.baseArgs,
-  '-m',
-  'pip',
-  'install',
-  ...installScopeArgs,
-  '-r',
-  requirementsPath,
-]);
+const venvResult = run(python.command, [...python.baseArgs, '-m', 'venv', venvPath]);
+
+if (venvResult.status !== 0) {
+  process.exit(venvResult.status || 1);
+}
+
+const pipResult = run(venvPython, ['-m', 'pip', 'install', '-r', requirementsPath]);
 
 process.exit(pipResult.status || 0);
