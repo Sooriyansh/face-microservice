@@ -1,4 +1,5 @@
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const projectRoot = path.join(__dirname, '..');
@@ -26,6 +27,10 @@ function run(command, args) {
   });
 }
 
+function exitCode(result) {
+  return result.status === null ? 1 : result.status;
+}
+
 function findPython() {
   for (const candidate of candidates) {
     const result = run(candidate.command, [...candidate.baseArgs, '--version']);
@@ -47,10 +52,18 @@ if (!shouldInstall) {
   process.exit(0);
 }
 
+if (fs.existsSync(venvPython)) {
+  console.log(`Installing Python dependencies with existing virtual environment: ${venvPython}`);
+  const pipResult = run(venvPython, ['-m', 'pip', 'install', '-r', requirementsPath]);
+  process.exit(exitCode(pipResult));
+}
+
 const python = findPython();
 
 if (!python) {
-  console.error('Python was not found. Render needs Python available to install face-recognition dependencies.');
+  console.error(
+    'Python was not found and no existing .venv is available. Install Python 3.12 locally, then run `npm run setup:python` again. Render needs Python available during npm install.'
+  );
   process.exit(1);
 }
 
@@ -59,9 +72,9 @@ const venvResult = run(python.command, [...python.baseArgs, '-m', 'venv', venvPa
 if (venvResult.status !== 0) {
   console.warn('Could not create .venv. Falling back to installing Python packages into the available Python environment.');
   const fallbackPipResult = run(python.command, [...python.baseArgs, '-m', 'pip', 'install', '-r', requirementsPath]);
-  process.exit(fallbackPipResult.status || 0);
+  process.exit(exitCode(fallbackPipResult));
 }
 
 const pipResult = run(venvPython, ['-m', 'pip', 'install', '-r', requirementsPath]);
 
-process.exit(pipResult.status || 0);
+process.exit(exitCode(pipResult));
