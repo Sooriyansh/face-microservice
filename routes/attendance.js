@@ -8,6 +8,7 @@ const Attendance = require('../models/Attendance');
 const Student = require('../models/Student');
 const { EMBEDDINGS_PATH, ensureFaceModelReady } = require('../services/faceModel');
 const { getPythonExecutable, PROJECT_ROOT } = require('../services/pythonRuntime');
+const { startSessionAfterAttendance } = require('../services/workSessions');
 
 const router = express.Router();
 const RECOGNIZE_WORKER = path.join(PROJECT_ROOT, 'python', 'recognition_worker.py');
@@ -68,6 +69,12 @@ async function markAttendanceForLabel(faceLabel, confidence = 0, markedAt, locat
   }).lean();
 
   if (existing) {
+    await startSessionAfterAttendance({
+      employee: student,
+      attendance: existing,
+      attendanceTime: existing.markedAt,
+    });
+
     return {
       status: 200,
       body: {
@@ -89,6 +96,11 @@ async function markAttendanceForLabel(faceLabel, confidence = 0, markedAt, locat
   });
 
   const populated = await Attendance.findById(record._id).populate('student').lean();
+  await startSessionAfterAttendance({
+    employee: student,
+    attendance: record,
+    attendanceTime,
+  });
 
   return {
     status: 201,
@@ -293,7 +305,9 @@ async function getWorkerProcess() {
 router.get('/', async (req, res, next) => {
   try {
     const dateKey = req.query.date || new Date().toISOString().slice(0, 10);
-    const records = await Attendance.find({ dateKey })
+    const employee = req.user?.role === 'employee' ? await Student.findOne({ email: req.user.email }).lean() : null;
+    const query = employee ? { dateKey, student: employee._id } : { dateKey };
+    const records = await Attendance.find(query)
       .sort({ markedAt: -1 })
       .populate('student')
       .lean();
@@ -313,6 +327,16 @@ router.post('/mark', async (req, res, next) => {
         success: false,
         message: 'faceLabel is required',
       });
+    }
+
+    if (req.user?.role === 'employee') {
+      const employee = await Student.findOne({ email: req.user.email }).lean();
+      if (!employee || employee.faceLabel !== faceLabel) {
+        return res.status(403).json({
+          success: false,
+          message: 'Employees can mark attendance only for their own face profile.',
+        });
+      }
     }
 
     const result = await markAttendanceForLabel(faceLabel, confidence, markedAt, location);
@@ -369,6 +393,18 @@ router.post('/scan', async (req, res, next) => {
         message: recognition.message || 'Face not recognized',
         confidence: recognition.confidence || 0,
       });
+    }
+
+    if (req.user?.role === 'employee') {
+      const employee = await Student.findOne({ email: req.user.email }).lean();
+      if (!employee || employee.faceLabel !== recognition.label) {
+        return res.status(403).json({
+          success: false,
+          recognized: false,
+          message: 'Recognized face does not match the logged-in employee account.',
+          confidence: recognition.confidence || 0,
+        });
+      }
     }
 
     const attendanceResult = await markAttendanceForLabel(recognition.label, recognition.confidence, undefined, location);

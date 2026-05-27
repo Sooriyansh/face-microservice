@@ -38,8 +38,8 @@ function findPython() {
   return null;
 }
 
-if (process.env.SKIP_PYTHON_INSTALL === '1') {
-  console.log('Skipping Python dependency install because SKIP_PYTHON_INSTALL=1.');
+if (process.env.INSTALL_PYTHON_DEPS !== '1') {
+  console.log('Skipping Python dependency install. Set INSTALL_PYTHON_DEPS=1 when you want npm install to install Python packages.');
   process.exit(0);
 }
 

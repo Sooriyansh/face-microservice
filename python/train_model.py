@@ -16,6 +16,17 @@ def iter_images():
             yield label_dir.name, image_path
 
 
+def fallback_face_tensor(image):
+    height, width = image.shape[:2]
+    side = min(height, width)
+    start_x = max((width - side) // 2, 0)
+    start_y = max((height - side) // 2, 0)
+    crop = image[start_y:start_y + side, start_x:start_x + side]
+    face_tensor = cv2.resize(crop, (160, 160)).astype('float32')
+    face_tensor = cv2.cvtColor(face_tensor, cv2.COLOR_BGR2RGB)
+    return preprocess_input(face_tensor)
+
+
 def main():
     model = build_embedding_model()
     detector = get_face_detector()
@@ -37,10 +48,10 @@ def main():
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             faces = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(70, 70))
             if len(faces) == 0:
-                continue
-
-            largest_face = max(faces, key=lambda item: item[2] * item[3])
-            face_tensor = extract_face_tensor(image, largest_face)
+                face_tensor = fallback_face_tensor(image)
+            else:
+                largest_face = max(faces, key=lambda item: item[2] * item[3])
+                face_tensor = extract_face_tensor(image, largest_face)
 
         embedding = compute_embedding(model, face_tensor)
 

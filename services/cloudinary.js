@@ -1,8 +1,9 @@
 const { v2: cloudinary } = require('cloudinary');
 
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'dpb0mwete';
-const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '155177776544667';
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || 'sGKj5YrpnXD6V5rrYlvGkgFz_eM';
+// Testing credentials are intentionally kept in code for this local project build.
+const CLOUDINARY_CLOUD_NAME = 'dpb0mwete';
+const CLOUDINARY_API_KEY = '155177776544667';
+const CLOUDINARY_API_SECRET = 'sGKj5YrpnXD6V5rrYlvGkgFz_eM';
 const hasCloudinaryUrl = Boolean(process.env.CLOUDINARY_URL);
 const hasNamedCredentials = Boolean(CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET);
 

@@ -1,6 +1,8 @@
 const express = require('express');
 
 const SystemEvent = require('../models/SystemEvent');
+const Student = require('../models/Student');
+const { recordTrackingEvent } = require('../services/workSessions');
 
 const router = express.Router();
 
@@ -15,6 +17,17 @@ const ALLOWED_EVENTS = new Set([
   'Unlock',
   'Login',
   'Logout',
+  'Idle Time',
+  'Idle State',
+  'Active Usage',
+  'Active State',
+  'App Opened',
+  'App Closed',
+  'Website Visited',
+  'Active Window',
+  'Keyboard Activity',
+  'Mouse Activity',
+  'Inactive Duration',
 ]);
 
 const WORKDAY_START_HOUR = 8;
@@ -103,6 +116,12 @@ router.get('/', async (req, res, next) => {
       query.user = selectedUser;
     }
 
+    if (req.user?.role === 'employee') {
+      const employee = await Student.findOne({ email: req.user.email }).lean();
+      const firstName = employee ? String(employee.name || '').split(' ')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+      query.user = firstName ? new RegExp(firstName, 'i') : /.^/;
+    }
+
     const events = await SystemEvent.find(query)
       .sort({ occurredAt: sortDirection })
       .limit(limit)
@@ -125,6 +144,13 @@ router.get('/', async (req, res, next) => {
 // Get all unique users and their activity summary
 router.get('/users/analytics', async (req, res, next) => {
   try {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admin can access employee analytics.',
+      });
+    }
+
     const workdayRange = getWorkdayRange();
     const from = parseDateQuery(req.query.from) || workdayRange.start;
     const to = parseDateQuery(req.query.to) || workdayRange.end;
@@ -181,6 +207,13 @@ router.get('/users/analytics', async (req, res, next) => {
 // Get detailed activity for a specific user
 router.get('/users/:userId/activity', async (req, res, next) => {
   try {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admin can inspect employee activity timelines.',
+      });
+    }
+
     const userId = String(req.params.userId || '').trim();
     const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 1000);
     const workdayRange = getWorkdayRange();
@@ -227,6 +260,13 @@ router.get('/users/:userId/activity', async (req, res, next) => {
 
 router.post('/ingest', async (req, res, next) => {
   try {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admin or trusted collectors can ingest system events.',
+      });
+    }
+
     const payloadEvents = Array.isArray(req.body.events) ? req.body.events : [req.body];
     const events = payloadEvents.map(normalizeSystemEvent).filter(Boolean);
 
@@ -247,6 +287,8 @@ router.post('/ingest', async (req, res, next) => {
       })),
       { ordered: false }
     );
+
+    await Promise.all(events.map((event) => recordTrackingEvent(event)));
 
     res.status(201).json({
       success: true,

@@ -31,6 +31,25 @@ const studentSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    faceLoginEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    biometricEncryptionStatus: {
+      type: String,
+      enum: ['Pending', 'Encrypted'],
+      default: 'Pending',
+    },
+    livenessStatus: {
+      type: String,
+      enum: ['Pending', 'Passed', 'Failed'],
+      default: 'Pending',
+    },
     enrollmentImages: {
       type: [
         {
@@ -49,6 +68,20 @@ const studentSchema = new mongoose.Schema(
         },
       ],
       default: [],
+    },
+    enrollmentStatus: {
+      type: String,
+      enum: ['Pending', 'Verified', 'Rejected', 'Re-enrollment Required'],
+      default: 'Pending',
+    },
+    enrollmentReviewedAt: {
+      type: Date,
+      default: null,
+    },
+    enrollmentReviewNote: {
+      type: String,
+      trim: true,
+      default: '',
     },
   },
   {

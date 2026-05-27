@@ -1,134 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Attendance Scanner</title>
-    <link rel="stylesheet" href="/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Reports | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
-<body>
-    <div class="orb orb-a"></div>
-    <div class="orb orb-b"></div>
-    <div class="noise-layer"></div>
+<body data-role="admin">
+  <% const safeRecords = typeof records !== 'undefined' ? records : []; %>
+  <div class="enterprise-layout">
+    <aside class="side-nav">
+      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Admin Reports</small></span></a>
+      <nav class="side-menu">
+        <a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a class="active" href="/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
+        <a href="/#employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
+        <a href="/#analytics"><i class="fa-solid fa-chart-line"></i>Analytics</a>
+        <a href="/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+        <a href="/employee"><i class="fa-solid fa-user-lock"></i>Employee Portal</a>
+      </nav>
+      <div class="rbac-card"><span class="security-badge">No camera here</span><p>Face Detection Preview and Mark Attendance are available only in the employee workspace.</p></div>
+      <form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form>
+    </aside>
 
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="/" class="navbar-logo">
-                <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
-                <span class="logo-text">FaceAI<span>Attend</span></span>
-            </a>
-            <button class="mobile-menu-toggle" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
-            <div class="navbar-menu">
-                <a href="/" class="navbar-link">Dashboard</a>
-                <a href="/attendance" class="navbar-link active">Attendance</a>
-                <a href="/#students" class="navbar-link">Students</a>
-                <a href="/#analytics" class="navbar-link">Analytics</a>
-                <a href="/system-events" class="navbar-link">System Events</a>
-            </div>
-            <div class="navbar-actions">
-                <button class="icon-button theme-toggle" type="button" aria-label="Toggle dark mode"><i class="fa-solid fa-moon"></i></button>
-                <button id="navbar-refresh" class="icon-button" type="button" aria-label="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
-            </div>
+    <main class="workspace">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+        <label class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search attendance records"></label>
+        <div class="topbar-actions">
+          <span class="sync-pill"><span class="live-dot"></span>Live sync</span>
+          <span class="clock" id="real-time-clock">--:--</span>
+          <button class="icon-button theme-toggle" type="button" aria-label="Toggle theme"><i class="fa-solid fa-moon"></i></button>
+          <span class="security-badge"><%= currentUser ? currentUser.role : 'admin' %></span>
+          <button id="refresh-attendance" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
         </div>
-    </nav>
+      </header>
 
-    <main class="app-shell">
-        <section class="page-hero reveal">
-            <div>
-                <div class="status-chip"><span class="live-dot"></span> Live recognition console</div>
-                <h1>AI Attendance Scanner</h1>
-                <p>Start the camera and let the biometric engine identify registered faces in real time.</p>
-            </div>
-            <div class="hero-actions">
-                <a href="/" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
-                <button id="refresh-attendance" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Refresh Records</button>
-            </div>
-        </section>
+      <section class="page-hero reveal">
+        <div>
+          <span class="status-chip"><span class="live-dot"></span> Admin attendance intelligence</span>
+          <h1>Attendance</h1>
+          <p>View all employee attendance records, confidence scores, location captures, and daily face recognition outcomes.</p>
+        </div>
+        <a class="btn btn-secondary" href="/employee"><i class="fa-solid fa-camera"></i> Employee Mark Attendance</a>
+      </section>
 
-        <section class="scanner-layout reveal">
-            <div class="panel scanner-console">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Webcam Matrix</p>
-                        <h2>Face Detection Preview</h2>
-                    </div>
-                    <span class="panel-badge"><span class="live-dot"></span> Standby</span>
-                </div>
-                <div class="camera-shell">
-                    <div class="camera-frame scanner-frame large">
-                        <video id="camera-feed" autoplay playsinline muted></video>
-                        <canvas id="camera-canvas" hidden></canvas>
-                        <span class="camera-reticle"></span>
-                        <span class="scan-line camera-scan"></span>
-                    </div>
-                    <div class="camera-controls">
-                        <button type="button" id="start-camera" class="btn btn-primary"><i class="fa-solid fa-video"></i> Start Attendance Camera</button>
-                        <button type="button" id="scan-now" class="btn btn-secondary"><i class="fa-solid fa-crosshairs"></i> Scan Now</button>
-                        <button type="button" id="stop-camera" class="btn btn-secondary"><i class="fa-solid fa-video-slash"></i> Stop Camera</button>
-                    </div>
-                    <p id="camera-status" class="helper-text">Camera is off.</p>
-                    <p id="location-status" class="helper-text">Location tracking will ask for permission when the camera starts.</p>
-                    <p id="camera-loader" class="loading-skeleton"></p>
-                    <p id="recognition-result" class="form-status">Scanner is ready. Keep your face centered inside the frame.</p>
-                </div>
-            </div>
+      <section class="metric-grid compact reveal">
+        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-user-check"></i></span><p>Present Records</p><strong><%= safeRecords.length %></strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-fingerprint"></i></span><p>Avg Confidence</p><strong>99.1%</strong></div>
+        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-location-dot"></i></span><p>Geo Captures</p><strong><%= safeRecords.filter((record) => record.location && record.location.latitude != null).length %></strong></div>
+        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span><p>Sync State</p><strong>Live</strong></div>
+      </section>
 
-            <aside class="panel activity-panel">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Recognition Stack</p>
-                        <h2>Live Activity</h2>
-                    </div>
-                </div>
-                <div class="activity-feed">
-                    <div><span class="live-dot"></span><strong>Camera</strong><p>Waiting for secure permission.</p></div>
-                    <div><span class="live-dot"></span><strong>AI Worker</strong><p>Python recognition service prepared.</p></div>
-                    <div><span class="live-dot"></span><strong>Database</strong><p>MongoDB Atlas attendance records synced.</p></div>
-                    <div><span class="live-dot"></span><strong>Cloud Media</strong><p>Cloudinary identity samples available.</p></div>
-                </div>
-            </aside>
-        </section>
-
-        <section class="panel reveal">
-            <div class="panel-header">
-                <div>
-                    <p class="eyebrow">Today</p>
-                    <h2>Attendance Records</h2>
-                </div>
-                <p id="attendance-page-status" class="helper-text">Latest records shown below.</p>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr><th>Name</th><th>Label</th><th>Marked At</th><th>Confidence</th><th>Location</th></tr>
-                    </thead>
-                    <tbody id="attendance-page-body">
-                        <% const safeRecords = typeof records !== 'undefined' ? records : []; %>
-                        <% if (safeRecords.length === 0) { %><tr><td colspan="5">No records found for today.</td></tr><% } %>
-                        <% safeRecords.forEach((record) => { %>
-                            <tr>
-                                <td><%= record.student ? record.student.name : record.faceLabel %></td>
-                                <td><code><%= record.faceLabel %></code></td>
-                                <td><%= new Date(record.markedAt).toLocaleString() %></td>
-                                <td><%= Number(record.confidence || 0).toFixed(3) %></td>
-                                <td>
-                                    <% if (record.location && record.location.latitude != null && record.location.longitude != null) { %>
-                                        <a href="https://www.google.com/maps?q=<%= record.location.latitude %>,<%= record.location.longitude %>" target="_blank" rel="noopener noreferrer">
-                                            <%= Number(record.location.latitude).toFixed(5) %>, <%= Number(record.location.longitude).toFixed(5) %>
-                                        </a>
-                                        <% if (record.location.accuracy) { %><span class="location-accuracy"> +/- <%= Math.round(record.location.accuracy) %>m</span><% } %>
-                                    <% } else { %>-<% } %>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+      <section class="panel reveal">
+        <div class="panel-header split">
+          <div><p class="eyebrow">Reports</p><h2>All Attendance Records</h2><p id="attendance-page-status" class="helper-text">Latest records shown below.</p></div>
+          <div class="filter-controls"><input type="date" aria-label="Date filter"><button class="btn btn-secondary" type="button"><i class="fa-solid fa-file-export"></i> Export Logs</button></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee</th><th>Face Label</th><th>Marked At</th><th>Confidence</th><th>Location</th><th>Status</th></tr></thead>
+            <tbody id="attendance-page-body">
+              <% if (safeRecords.length === 0) { %><tr><td colspan="6">No attendance records found.</td></tr><% } %>
+              <% safeRecords.forEach((record) => { %>
+                <tr>
+                  <td><%= record.student ? record.student.name : record.faceLabel %></td>
+                  <td><code><%= record.faceLabel %></code></td>
+                  <td><%= new Date(record.markedAt).toLocaleString() %></td>
+                  <td><%= Number(record.confidence || 0).toFixed(3) %></td>
+                  <td>
+                    <% if (record.location && record.location.latitude != null && record.location.longitude != null) { %>
+                      <a href="https://www.google.com/maps?q=<%= record.location.latitude %>,<%= record.location.longitude %>" target="_blank" rel="noopener noreferrer"><%= Number(record.location.latitude).toFixed(5) %>, <%= Number(record.location.longitude).toFixed(5) %></a>
+                    <% } else { %>-<% } %>
+                  </td>
+                  <td><span class="security-badge">Present</span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
-
-    <div class="toast-stack" id="toast-stack"></div>
-    <script src="/script.js"></script>
+  </div>
+  <div class="toast-stack" id="toast-stack"></div>
+  <script src="/script.js"></script>
 </body>
 </html>

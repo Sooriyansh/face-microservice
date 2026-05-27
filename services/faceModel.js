@@ -85,8 +85,25 @@ async function restoreDatasetFromMongo() {
 }
 
 async function rebuildFaceModelFromCloud() {
-  await restoreDatasetFromMongo();
-  await trainEmbeddings();
+  try {
+    await restoreDatasetFromMongo();
+    await trainEmbeddings();
+  } finally {
+    await fs.rm(DATASET_ROOT, { recursive: true, force: true });
+  }
+}
+
+async function tryRebuildFaceModelFromCloud() {
+  try {
+    await rebuildFaceModelFromCloud();
+    return { success: true };
+  } catch (error) {
+    console.error('Face model rebuild failed:', error.message);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
 }
 
 async function ensureFaceModelReady() {
@@ -109,4 +126,5 @@ module.exports = {
   ensureFaceModelReady,
   rebuildFaceModelFromCloud,
   trainEmbeddings,
+  tryRebuildFaceModelFromCloud,
 };
