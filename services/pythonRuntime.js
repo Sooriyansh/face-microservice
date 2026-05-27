@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 
 const PROJECT_ROOT = path.join(__dirname, '..');
 const WINDOWS_VENV_PYTHON = path.join(PROJECT_ROOT, '.venv', 'Scripts', 'python.exe');
@@ -10,10 +11,10 @@ function getPythonExecutable() {
   }
 
   if (process.platform === 'win32') {
-    return WINDOWS_VENV_PYTHON;
+    return fs.existsSync(WINDOWS_VENV_PYTHON) ? WINDOWS_VENV_PYTHON : 'python';
   }
 
-  return POSIX_VENV_PYTHON;
+  return fs.existsSync(POSIX_VENV_PYTHON) ? POSIX_VENV_PYTHON : 'python3';
 }
 
 module.exports = {

@@ -374,7 +374,7 @@ router.post('/scan', async (req, res, next) => {
       return res.status(500).json({
         success: false,
         message:
-          'Python recognition service is unavailable. Please complete `npm run setup:python` and `npm run py:train` first.',
+          'Python recognition service is unavailable. On Render, make sure the latest deploy installed Python dependencies during npm install. Locally, run `npm run setup:python` and then retry.',
         details: error.message,
       });
     }

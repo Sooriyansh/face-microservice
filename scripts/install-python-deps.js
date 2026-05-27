@@ -38,8 +38,16 @@ function findPython() {
   return null;
 }
 
-if (process.env.INSTALL_PYTHON_DEPS !== '1') {
-  console.log('Skipping Python dependency install. Set INSTALL_PYTHON_DEPS=1 when you want npm install to install Python packages.');
+const shouldInstall =
+  process.argv.includes('--force') ||
+  process.env.INSTALL_PYTHON_DEPS === '1' ||
+  process.env.RENDER === 'true' ||
+  Boolean(process.env.RENDER_SERVICE_ID);
+
+if (!shouldInstall) {
+  console.log(
+    'Skipping Python dependency install. Set INSTALL_PYTHON_DEPS=1, or deploy on Render, when Python packages are needed.'
+  );
   process.exit(0);
 }
 
@@ -53,7 +61,9 @@ if (!python) {
 const venvResult = run(python.command, [...python.baseArgs, '-m', 'venv', venvPath]);
 
 if (venvResult.status !== 0) {
-  process.exit(venvResult.status || 1);
+  console.warn('Could not create .venv. Falling back to installing Python packages into the available Python environment.');
+  const fallbackPipResult = run(python.command, [...python.baseArgs, '-m', 'pip', 'install', '-r', requirementsPath]);
+  process.exit(fallbackPipResult.status || 0);
 }
 
 const pipResult = run(venvPython, ['-m', 'pip', 'install', '-r', requirementsPath]);
