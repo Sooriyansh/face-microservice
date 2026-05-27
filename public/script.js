@@ -184,102 +184,6 @@ function renderSystemEvents(events) {
   });
 }
 
-async function loadAndDisplayUserAnalytics() {
-  const summaryContainer = document.getElementById('user-summary');
-  if (!summaryContainer) {
-    return;
-  }
-
-  try {
-    const data = await fetchJson('/api/system-events/users/analytics?mode=workday');
-    const users = data.users || [];
-
-    summaryContainer.innerHTML = '';
-
-    if (!users.length) {
-      summaryContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No system activity records were found.</p>';
-      return;
-    }
-
-    users.forEach((user) => {
-      const card = document.createElement('div');
-      card.className = 'user-card';
-      card.setAttribute('data-user', user.user);
-      card.style.cursor = 'pointer';
-
-      const header = document.createElement('div');
-      header.className = 'user-card-header';
-
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'user-name';
-      nameSpan.textContent = user.user;
-      header.appendChild(nameSpan);
-
-      const badge = document.createElement('span');
-      badge.className = 'accuracy-badge';
-      badge.innerHTML = `<i class="fa-solid fa-check"></i> 100%`;
-      header.appendChild(badge);
-
-      card.appendChild(header);
-
-      const stats = document.createElement('div');
-      stats.className = 'user-card-stats';
-
-      const totalEventsItem = document.createElement('div');
-      totalEventsItem.className = 'stat-item';
-      totalEventsItem.innerHTML = `
-        <span class="stat-label">Total Events</span>
-        <span class="stat-value">${user.totalEvents}</span>
-      `;
-      stats.appendChild(totalEventsItem);
-
-      const eventTypesItem = document.createElement('div');
-      eventTypesItem.className = 'stat-item';
-      eventTypesItem.innerHTML = `
-        <span class="stat-label">Event Types</span>
-        <span class="stat-value">${user.uniqueEventTypes}</span>
-      `;
-      stats.appendChild(eventTypesItem);
-
-      const lastActivityItem = document.createElement('div');
-      lastActivityItem.className = 'stat-item';
-      lastActivityItem.innerHTML = `
-        <span class="stat-label">Last Activity</span>
-        <span class="stat-value">${new Date(user.lastActivity).toLocaleTimeString()}</span>
-      `;
-      stats.appendChild(lastActivityItem);
-
-      card.appendChild(stats);
-
-      card.addEventListener('click', () => {
-        const userFilter = document.getElementById('user-filter');
-        if (userFilter) {
-          userFilter.value = user.user;
-          filterEventsByUser(user.user);
-        }
-      });
-
-      summaryContainer.appendChild(card);
-    });
-
-    // Update user filter dropdown
-    const userFilter = document.getElementById('user-filter');
-    if (userFilter) {
-      const currentValue = userFilter.value;
-      userFilter.innerHTML = '<option value="">All Employees</option>';
-      users.forEach((user) => {
-        const option = document.createElement('option');
-        option.value = user.user;
-        option.textContent = user.user;
-        userFilter.appendChild(option);
-      });
-      userFilter.value = currentValue;
-    }
-  } catch (error) {
-    summaryContainer.innerHTML = `<p style="grid-column: 1/-1; color: var(--accent-tertiary);">Error loading user analytics: ${error.message}</p>`;
-  }
-}
-
 function filterEventsByUser(userName) {
   const rows = document.querySelectorAll('.event-row');
   rows.forEach((row) => {
@@ -592,7 +496,6 @@ async function refreshSystemEvents() {
     renderEnhancedSystemEvents(data.events || []);
     updateSystemEventsSummary(data);
     attachUserFilterListener();
-    await loadAndDisplayUserAnalytics();
 
     if (status) {
       status.textContent = `Showing ${data.events.length} event(s) from 8:00 AM to current time. Accuracy: 100%`;
@@ -612,6 +515,89 @@ let enrollmentImages = [];
 let attendanceLocation = null;
 let attendanceLocationAt = 0;
 let locationRetryAfter = 0;
+const SCAN_CANVAS_WIDTH = 520;
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function updateText(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function setScannerState(id, message, mode = 'idle') {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = message;
+    element.dataset.state = mode;
+  }
+}
+
+function drawVideoToScanCanvas(video, canvas) {
+  const sourceWidth = video.videoWidth || 640;
+  const sourceHeight = video.videoHeight || 480;
+  const width = Math.min(SCAN_CANVAS_WIDTH, sourceWidth);
+  const height = Math.round(width * (sourceHeight / sourceWidth));
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  context.drawImage(video, 0, 0, width, height);
+  return context;
+}
+
+function readFrameMetrics(context, canvas) {
+  const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+  let total = 0;
+  let totalSq = 0;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const luminance = (data[index] * 0.2126) + (data[index + 1] * 0.7152) + (data[index + 2] * 0.0722);
+    total += luminance;
+    totalSq += luminance * luminance;
+  }
+
+  const pixels = data.length / 4;
+  const brightness = total / pixels;
+  const contrast = Math.sqrt(Math.max((totalSq / pixels) - (brightness * brightness), 0));
+
+  return {
+    brightness,
+    contrast,
+    brightnessLabel: brightness < 45 ? 'Low light' : brightness > 220 ? 'Too bright' : 'Lighting stable',
+    qualityLabel: contrast < 26 ? 'Hold still' : 'Frame sharp',
+    canSend: brightness >= 28 && brightness <= 238 && contrast >= 14,
+  };
+}
+
+function positionFaceBox(boxId, box, canvas) {
+  const element = document.getElementById(boxId);
+  if (!element) {
+    return;
+  }
+
+  if (!box || !canvas.width || !canvas.height) {
+    element.hidden = true;
+    return;
+  }
+
+  element.hidden = false;
+  element.style.left = `${clamp((box.x / canvas.width) * 100, 0, 100)}%`;
+  element.style.top = `${clamp((box.y / canvas.height) * 100, 0, 100)}%`;
+  element.style.width = `${clamp((box.w / canvas.width) * 100, 8, 100)}%`;
+  element.style.height = `${clamp((box.h / canvas.height) * 100, 8, 100)}%`;
+}
+
+function updateAttendanceScannerTelemetry(response, canvas, frameMetrics) {
+  const confidence = Number(response?.recognition?.confidence || response?.confidence || 0);
+  updateText('attendance-confidence', `Confidence ${(confidence * 100).toFixed(1)}%`);
+  updateText('attendance-light-state', response?.quality?.brightness?.message || frameMetrics?.brightnessLabel || 'Lighting stable');
+  updateText('attendance-quality-state', response?.quality?.blur?.message || frameMetrics?.qualityLabel || 'Frame sharp');
+  updateText('attendance-face-state', response?.box || response?.recognition?.box ? 'Face Detected' : 'Searching Face');
+  positionFaceBox('attendance-face-box', response?.recognition?.box || response?.box, canvas);
+}
 
 function setScanStatus(message) {
   const scanStatus = document.getElementById('camera-status');
@@ -620,7 +606,7 @@ function setScanStatus(message) {
   }
 }
 
-function setRecognitionResult(message, isSuccess = false, studentName = null, confidence = null) {
+function setRecognitionResult(message, isSuccess = null, studentName = null, confidence = null) {
   const result = document.getElementById('recognition-result');
   if (result) {
     if (isSuccess) {
@@ -632,10 +618,13 @@ function setRecognitionResult(message, isSuccess = false, studentName = null, co
       result.classList.add('status-success');
       result.classList.remove('status-error');
       showToast(displayMsg);
-    } else {
+    } else if (isSuccess === false) {
       result.textContent = message;
       result.classList.add('status-error');
       result.classList.remove('status-success');
+    } else {
+      result.textContent = message;
+      result.classList.remove('status-error', 'status-success');
     }
   }
 }
@@ -661,7 +650,7 @@ function setScanLoading(isLoading) {
   }
 
   if (loader) {
-    loader.textContent = isLoading ? 'Attendance scan is in progress...' : '';
+    loader.textContent = isLoading ? 'Matching identity with secure face model...' : '';
   }
 }
 
@@ -679,17 +668,26 @@ async function scanCurrentFrame() {
 
   scanInFlight = true;
   setScanLoading(true);
-  setScanStatus('Scanning live frame...');
+  setScanStatus('Detecting face...');
+  setScannerState('attendance-scanner-state', 'Analyzing Face', 'scanning');
 
   try {
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    const context = drawVideoToScanCanvas(video, canvas);
+    const frameMetrics = readFrameMetrics(context, canvas);
+    updateText('attendance-light-state', frameMetrics.brightnessLabel);
+    updateText('attendance-quality-state', frameMetrics.qualityLabel);
 
-    const context = canvas.getContext('2d');
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (!frameMetrics.canSend) {
+      setScannerState('attendance-scanner-state', 'Improve Frame', 'warning');
+      setRecognitionResult(`${frameMetrics.brightnessLabel}. ${frameMetrics.qualityLabel}. Center your face and improve lighting.`, false);
+      return;
+    }
+
+    setScanStatus('Matching face...');
+    setScannerState('attendance-scanner-state', 'Matching Identity', 'matching');
 
     const payload = {
-      image: canvas.toDataURL('image/jpeg', 0.9),
+      image: canvas.toDataURL('image/jpeg', 0.82),
       location: await getAttendanceLocation(),
     };
 
@@ -705,6 +703,8 @@ async function scanCurrentFrame() {
       const studentName = response.record?.student?.name || response.recognition?.label || 'Teacher';
       const confidence = response.recognition?.confidence || response.record?.confidence || 0;
       const isDuplicate = response.duplicate;
+      updateAttendanceScannerTelemetry(response, canvas, frameMetrics);
+      setScannerState('attendance-scanner-state', 'Verified Successfully', 'success');
       
       setRecognitionResult('', true, studentName, confidence);
       
@@ -714,7 +714,7 @@ async function scanCurrentFrame() {
         setTimeout(() => {
           stopLiveCamera();
           setScanStatus('Camera stopped - Attendance process complete');
-          setRecognitionResult('Start the camera again for a new scan.', false);
+          setRecognitionResult('Start the camera again for a new scan.');
         }, 3000);
       } else {
         setScanStatus(`${studentName}'s attendance is already marked for today.`);
@@ -726,6 +726,8 @@ async function scanCurrentFrame() {
       const confidence = Number(response.confidence || 0).toFixed(3);
       const message = response.message || 'Face was not recognized.';
       const qualityIssues = response.quality_issues || [];
+      updateAttendanceScannerTelemetry(response, canvas, frameMetrics);
+      setScannerState('attendance-scanner-state', response.stage === 'no_face' ? 'Center Face' : 'Face Not Recognized', 'error');
       
       let displayMsg = message;
       if (qualityIssues && qualityIssues.length > 0) {
@@ -736,9 +738,10 @@ async function scanCurrentFrame() {
     }
   } catch (error) {
       setRecognitionResult(error.message, false);
+      setScannerState('attendance-scanner-state', 'Scan Failed', 'error');
     } finally {
       setScanLoading(false);
-      setScanStatus(cameraStream ? 'Camera live - Auto scan runs every 3 seconds.' : 'Camera stopped');
+      setScanStatus(cameraStream ? 'Camera live - real-time scan is active.' : 'Camera stopped');
       scanInFlight = false;
     }
 }
@@ -796,7 +799,7 @@ async function startLiveCamera() {
 
   if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
     setScanStatus('Camera API is not available.');
-    setRecognitionResult('Open this page at http://localhost:3000 and allow camera permission to use the browser camera.');
+    setRecognitionResult('Open this page at http://localhost:3000 and allow camera permission to use the browser camera.', false);
     return;
   }
 
@@ -809,6 +812,9 @@ async function startLiveCamera() {
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: 'user',
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+        frameRate: { ideal: 24, max: 30 },
       },
       audio: false,
     });
@@ -816,16 +822,17 @@ async function startLiveCamera() {
     video.srcObject = cameraStream;
     await video.play();
 
-    setScanStatus('Camera is live. Auto scan running every 3 seconds.');
-    setRecognitionResult('Live recognition is ready. Keep your face in front of the camera.');
+    setScanStatus('Camera is live. Real-time face scan started.');
+    setScannerState('attendance-scanner-state', 'Detecting Face', 'scanning');
+    setRecognitionResult('Live recognition is ready. Center your face inside the scanner.');
     getAttendanceLocation(true);
 
-    scanInterval = window.setInterval(scanCurrentFrame, 3000);
-    window.setTimeout(scanCurrentFrame, 1200);
+    scanInterval = window.setInterval(scanCurrentFrame, 1400);
+    window.setTimeout(scanCurrentFrame, 450);
   } catch (error) {
     cameraStream = null;
     setScanStatus('Camera access blocked.');
-    setRecognitionResult(`Camera could not be opened: ${error.message}`);
+    setRecognitionResult(`Camera could not be opened: ${error.message}`, false);
   }
 }
 
@@ -913,6 +920,9 @@ async function startEnrollmentCamera() {
     enrollmentCameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: 'user',
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+        frameRate: { ideal: 24, max: 30 },
       },
       audio: false,
     });
@@ -959,32 +969,45 @@ async function captureEnrollmentSamples() {
   const faceValidation = document.getElementById('face-validation');
   const alignmentStatus = document.getElementById('alignment-status');
 
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-  const context = canvas.getContext('2d');
+  const requiredPrompts = ['Look straight', 'Turn slightly left', 'Turn slightly right', 'Move closer', 'Blink once', 'Hold still'];
+  let promptIndex = 0;
 
-  for (let index = 0; index < 12; index += 1) {
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    enrollmentImages.push(canvas.toDataURL('image/jpeg', 0.9));
+  while (enrollmentImages.length < 12) {
+    const context = drawVideoToScanCanvas(video, canvas);
+    const metrics = readFrameMetrics(context, canvas);
+    const progress = Math.round((enrollmentImages.length / 12) * 100);
+
+    if (!metrics.canSend) {
+      setEnrollmentSampleStatus(`${metrics.brightnessLabel}. ${metrics.qualityLabel}. Improve lighting and hold still.`);
+      if (faceQuality) faceQuality.textContent = `Quality ${Math.max(15, Math.round(metrics.contrast))}%`;
+      if (lightingQuality) lightingQuality.textContent = metrics.brightnessLabel;
+      if (faceValidation) faceValidation.textContent = 'Frame rejected';
+      if (alignmentStatus) alignmentStatus.textContent = 'Center face';
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => window.setTimeout(resolve, 260));
+      continue;
+    }
+
+    enrollmentImages.push(canvas.toDataURL('image/jpeg', 0.86));
     renderEnrollmentPreview();
-    setEnrollmentSampleStatus(`Captured ${index + 1}/12 face samples`);
-    const progress = Math.round(((index + 1) / 12) * 100);
-    updateSignupBiometricProgress(progress, Math.min(Math.floor(index / 2), 6));
+    const captured = enrollmentImages.length;
+    setEnrollmentSampleStatus(`Captured ${captured}/12 face samples - ${requiredPrompts[promptIndex]}`);
+    updateSignupBiometricProgress(Math.round((captured / 12) * 100), Math.min(Math.floor(captured / 2), 6));
     if (faceQuality) {
-      faceQuality.textContent = `Quality ${progress}%`;
+      faceQuality.textContent = `Quality ${Math.min(100, Math.round(metrics.contrast * 2.5))}%`;
     }
     if (lightingQuality) {
-      lightingQuality.textContent = progress > 50 ? 'Lighting stable' : 'Scanning light';
+      lightingQuality.textContent = metrics.brightnessLabel;
     }
     if (faceValidation) {
-      faceValidation.textContent = progress > 30 ? 'Face detected' : 'Validating face';
+      faceValidation.textContent = 'Face sample accepted';
     }
     if (alignmentStatus) {
-      alignmentStatus.textContent = progress > 70 ? 'Aligned' : 'Turn slightly';
+      alignmentStatus.textContent = requiredPrompts[promptIndex];
     }
-    // Small delay so samples are not identical
+    promptIndex = (promptIndex + 1) % requiredPrompts.length;
     // eslint-disable-next-line no-await-in-loop
-    await new Promise((resolve) => window.setTimeout(resolve, 220));
+    await new Promise((resolve) => window.setTimeout(resolve, 260));
   }
 
   setEnrollmentSampleStatus('Face samples are ready. Secure biometric upload can begin.');
@@ -1320,6 +1343,17 @@ function setEmployeeLoginConfidence(confidence) {
   }
 }
 
+function updateEmployeeLoginTelemetry(data, canvas, frameMetrics) {
+  setEmployeeLoginConfidence(data?.confidence || 0);
+  positionFaceBox('employee-login-face-box', data?.box, canvas);
+  updateText('employee-login-state', data?.box ? 'Face Detected' : 'Searching Face');
+  const state = data?.recognized ? 'Verified Successfully' : data?.stage === 'no_face' ? 'Center Face' : 'Matching Face';
+  setScannerState('employee-login-scanner-state', state, data?.recognized ? 'success' : 'matching');
+  if (frameMetrics && !data?.box) {
+    updateText('employee-login-state', frameMetrics.brightnessLabel);
+  }
+}
+
 async function scanEmployeeFaceLogin() {
   if (employeeLoginInFlight) {
     return;
@@ -1334,22 +1368,40 @@ async function scanEmployeeFaceLogin() {
   }
 
   employeeLoginInFlight = true;
-  if (state) state.textContent = 'Scanning Face...';
-  setEmployeeFaceLoginStatus('Scanning Face...');
+  if (state) state.textContent = 'Detecting Face';
+  setScannerState('employee-login-scanner-state', 'Analyzing Face', 'scanning');
+  setEmployeeFaceLoginStatus('Detecting face and checking frame quality...');
 
   try {
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    const context = drawVideoToScanCanvas(video, canvas);
+    const frameMetrics = readFrameMetrics(context, canvas);
+
+    if (!frameMetrics.canSend) {
+      if (state) state.textContent = frameMetrics.brightnessLabel;
+      setScannerState('employee-login-scanner-state', 'Improve Frame', 'warning');
+      setEmployeeFaceLoginStatus(`${frameMetrics.brightnessLabel}. ${frameMetrics.qualityLabel}. Center your face and hold still.`, true);
+      return;
+    }
+
+    if (state) state.textContent = 'Matching Face';
+    setScannerState('employee-login-scanner-state', 'Matching Identity', 'matching');
 
     const data = await fetchJson('/employee-face-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: canvas.toDataURL('image/jpeg', 0.9) }),
+      body: JSON.stringify({ image: canvas.toDataURL('image/jpeg', 0.82) }),
     });
 
-    setEmployeeLoginConfidence(data.confidence || 0);
+    updateEmployeeLoginTelemetry(data, canvas, frameMetrics);
+    if (!data.recognized) {
+      if (state) state.textContent = data.stage === 'no_face' ? 'Center face' : 'Low confidence';
+      setScannerState('employee-login-scanner-state', data.stage === 'no_face' ? 'Center Face' : 'Face Not Recognized', 'error');
+      setEmployeeFaceLoginStatus(data.message || 'Face not recognized. Improve lighting and retry.', true);
+      return;
+    }
+
     if (state) state.textContent = 'Login success';
+    setScannerState('employee-login-scanner-state', 'Verified Successfully', 'success');
     setEmployeeFaceLoginStatus(`Login success. Welcome ${data.employee?.name || 'Employee'}.`);
     showToast('Face authentication successful.');
     window.setTimeout(() => {
@@ -1358,7 +1410,8 @@ async function scanEmployeeFaceLogin() {
   } catch (error) {
     if (state) state.textContent = 'Face not recognized';
     setEmployeeLoginConfidence(0);
-    setEmployeeFaceLoginStatus('Face not recognized. Retry scan.', true);
+    setScannerState('employee-login-scanner-state', 'Scan Failed', 'error');
+    setEmployeeFaceLoginStatus(error.message || 'Face not recognized. Retry scan.', true);
   } finally {
     employeeLoginInFlight = false;
   }
@@ -1381,12 +1434,21 @@ async function startEmployeeFaceLogin() {
   }
 
   try {
-    employeeLoginStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    employeeLoginStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'user',
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+        frameRate: { ideal: 24, max: 30 },
+      },
+      audio: false,
+    });
     video.srcObject = employeeLoginStream;
     await video.play();
-    setEmployeeFaceLoginStatus('Webcam active. Scanning Face...');
-    employeeLoginInterval = window.setInterval(scanEmployeeFaceLogin, 3200);
-    window.setTimeout(scanEmployeeFaceLogin, 900);
+    setScannerState('employee-login-scanner-state', 'Detecting Face', 'scanning');
+    setEmployeeFaceLoginStatus('Webcam active. Real-time face matching started.');
+    employeeLoginInterval = window.setInterval(scanEmployeeFaceLogin, 1400);
+    window.setTimeout(scanEmployeeFaceLogin, 450);
   } catch (error) {
     employeeLoginStream = null;
     setEmployeeFaceLoginStatus(`Camera could not be opened: ${error.message}`, true);

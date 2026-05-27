@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -149,7 +149,7 @@
                 <div>
                   <span class="event-dot"></span>
                   <strong><%= event.type %></strong>
-                  <p><%= new Date(event.occurredAt).toLocaleString() %> · <%= event.message || event.deviceInfo || 'Live activity event' %></p>
+                  <p><%= new Date(event.occurredAt).toLocaleString() %> Â· <%= event.message || event.deviceInfo || 'Live activity event' %></p>
                 </div>
               <% }) } %>
             </div>
@@ -178,6 +178,14 @@
               <canvas id="camera-canvas" hidden></canvas>
               <span class="camera-reticle"></span>
               <span class="scan-line camera-scan"></span>
+                          <span class="face-box" id="attendance-face-box" hidden></span>
+              <div class="scanner-state" id="attendance-scanner-state">Initializing Camera</div>
+            </div>
+            <div class="quality-grid">
+              <div><strong id="attendance-confidence">Confidence 0%</strong><span>Live match score</span></div>
+              <div><strong id="attendance-face-state">Ready</strong><span>Face tracking</span></div>
+              <div><strong id="attendance-light-state">Lighting pending</strong><span>Brightness check</span></div>
+              <div><strong id="attendance-quality-state">Quality pending</strong><span>Sharpness check</span></div>
             </div>
             <div class="camera-controls">
               <button type="button" id="start-camera" class="btn btn-primary"><i class="fa-solid fa-video"></i> Start Camera</button>
@@ -217,7 +225,7 @@
               <div><span class="event-dot"></span><strong>No personal events captured yet</strong><p>Startup, shutdown, login/logout, lock/unlock, sleep/wakeup events will appear here.</p></div>
             <% } %>
             <% safeEvents.slice(0, 10).forEach((event) => { %>
-              <div><span class="event-dot"></span><strong><%= event.event %></strong><p><%= new Date(event.occurredAt).toLocaleString() %> · <%= event.meaning || event.sourceLog || 'System event' %></p></div>
+              <div><span class="event-dot"></span><strong><%= event.event %></strong><p><%= new Date(event.occurredAt).toLocaleString() %> Â· <%= event.meaning || event.sourceLog || 'System event' %></p></div>
             <% }) %>
           </div>
         </div>
@@ -265,7 +273,7 @@
         <span><i class="fa-solid fa-check"></i> Device activity monitoring</span>
         <span><i class="fa-solid fa-check"></i> Lock/unlock detection</span>
       </div>
-      <p class="form-status">Attendance still works if you deny monitoring. Admin will see “Monitoring Permission Denied”.</p>
+      <p class="form-status">Attendance still works if you deny monitoring. Admin will see â€œMonitoring Permission Deniedâ€.</p>
       <div class="hero-actions">
         <button type="button" class="btn btn-primary" id="allow-monitoring"><i class="fa-solid fa-shield-check"></i> Allow Monitoring</button>
         <button type="button" class="btn btn-secondary" id="deny-monitoring"><i class="fa-solid fa-ban"></i> Deny</button>
@@ -275,3 +283,6 @@
   <script src="/script.js"></script>
 </body>
 </html>
+
+
+

@@ -15,7 +15,7 @@ const WorkSession = require('./models/WorkSession');
 const User = require('./models/User');
 const { deleteImages, uploadImageBuffer } = require('./services/cloudinary');
 const { tryRebuildFaceModelFromCloud } = require('./services/faceModel');
-const { runRecognition } = require('./services/faceRecognition');
+const { getWorkerProcess, runRecognition } = require('./services/faceRecognition');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const AUTH_SECRET = process.env.AUTH_SECRET || 'change-this-auth-secret-in-env';
@@ -332,11 +332,15 @@ app.post('/employee-face-login', async (req, res, next) => {
     }
 
     if (!recognition.success || !recognition.matched) {
-      return res.status(401).json({
-        success: false,
+      return res.json({
+        success: true,
         recognized: false,
-        message: 'Face not recognized.',
+        message: recognition.message || 'Face detected, but identity confidence is low.',
         confidence: recognition.confidence || 0,
+        box: recognition.box || null,
+        quality: recognition.quality || null,
+        quality_issues: recognition.quality_issues || [],
+        stage: recognition.stage || 'not_matched',
       });
     }
 
@@ -529,4 +533,7 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port http://localhost:${PORT}`);
+  getWorkerProcess()
+    .then(() => console.log('Face recognition worker warmed up'))
+    .catch((error) => console.warn('Face recognition warmup skipped:', error.message));
 });

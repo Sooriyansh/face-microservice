@@ -141,69 +141,6 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Get all unique users and their activity summary
-router.get('/users/analytics', async (req, res, next) => {
-  try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only admin can access employee analytics.',
-      });
-    }
-
-    const workdayRange = getWorkdayRange();
-    const from = parseDateQuery(req.query.from) || workdayRange.start;
-    const to = parseDateQuery(req.query.to) || workdayRange.end;
-
-    const users = await SystemEvent.aggregate([
-      {
-        $match: {
-          occurredAt: {
-            $gte: from,
-            $lte: to,
-          },
-          user: { $ne: '', $exists: true },
-        },
-      },
-      {
-        $group: {
-          _id: '$user',
-          totalEvents: { $sum: 1 },
-          uniqueEvents: { $addToSet: '$event' },
-          lastActivity: { $max: '$occurredAt' },
-          firstActivity: { $min: '$occurredAt' },
-          eventTypes: {
-            $push: {
-              event: '$event',
-              count: 1,
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          user: '$_id',
-          totalEvents: 1,
-          uniqueEventTypes: { $size: '$uniqueEvents' },
-          lastActivity: 1,
-          firstActivity: 1,
-          accuracy: { $literal: 100 },
-          _id: 0,
-        },
-      },
-      { $sort: { totalEvents: -1 } },
-    ]);
-
-    res.json({
-      success: true,
-      users,
-      range: { start: from, end: to },
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
 // Get detailed activity for a specific user
 router.get('/users/:userId/activity', async (req, res, next) => {
   try {

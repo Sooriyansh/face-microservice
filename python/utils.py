@@ -19,6 +19,23 @@ def get_face_detector() -> cv2.CascadeClassifier:
     return detector
 
 
+def get_profile_face_detector() -> cv2.CascadeClassifier:
+    cascade_path = Path(cv2.data.haarcascades) / "haarcascade_profileface.xml"
+    detector = cv2.CascadeClassifier(str(cascade_path))
+    if detector.empty():
+        raise RuntimeError("Failed to load Haar cascade for profile face detection")
+    return detector
+
+
+def normalize_lighting(frame: np.ndarray) -> np.ndarray:
+    lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+    l_channel, a_channel, b_channel = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
+    enhanced_l = clahe.apply(l_channel)
+    enhanced = cv2.merge((enhanced_l, a_channel, b_channel))
+    return cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
+
+
 def build_embedding_model() -> tf.keras.Model:
     base_model = MobileNetV2(
         include_top=False,
@@ -30,14 +47,35 @@ def build_embedding_model() -> tf.keras.Model:
     return base_model
 
 
-def detect_largest_face(frame: np.ndarray, detector: cv2.CascadeClassifier) -> Tuple[int, int, int, int] | None:
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = detector.detectMultiScale(
+def detect_largest_face(frame: np.ndarray, detector: cv2.CascadeClassifier, profile_detector: cv2.CascadeClassifier | None = None) -> Tuple[int, int, int, int] | None:
+    enhanced = normalize_lighting(frame)
+    gray = cv2.cvtColor(enhanced, cv2.COLOR_BGR2GRAY)
+    gray = cv2.equalizeHist(gray)
+    min_side = max(48, int(min(frame.shape[:2]) * 0.12))
+    faces = list(detector.detectMultiScale(
         gray,
-        scaleFactor=1.1,
-        minNeighbors=8,
-        minSize=(80, 80),
-    )
+        scaleFactor=1.08,
+        minNeighbors=5,
+        minSize=(min_side, min_side),
+    ))
+    if profile_detector is not None:
+        profile_faces = list(profile_detector.detectMultiScale(
+            gray,
+            scaleFactor=1.08,
+            minNeighbors=5,
+            minSize=(min_side, min_side),
+        ))
+        flipped = cv2.flip(gray, 1)
+        flipped_faces = profile_detector.detectMultiScale(
+            flipped,
+            scaleFactor=1.08,
+            minNeighbors=5,
+            minSize=(min_side, min_side),
+        )
+        width = frame.shape[1]
+        mirrored = [(width - x - w, y, w, h) for (x, y, w, h) in flipped_faces]
+        faces.extend(profile_faces)
+        faces.extend(mirrored)
     if len(faces) == 0:
         return None
     return max(faces, key=lambda item: item[2] * item[3])
@@ -45,7 +83,13 @@ def detect_largest_face(frame: np.ndarray, detector: cv2.CascadeClassifier) -> T
 
 def extract_face_tensor(frame: np.ndarray, face_box: Iterable[int]) -> np.ndarray:
     x, y, w, h = [int(value) for value in face_box]
-    face = frame[y : y + h, x : x + w]
+    pad_x = int(w * 0.18)
+    pad_y = int(h * 0.22)
+    x1 = max(x - pad_x, 0)
+    y1 = max(y - pad_y, 0)
+    x2 = min(x + w + pad_x, frame.shape[1])
+    y2 = min(y + h + pad_y, frame.shape[0])
+    face = normalize_lighting(frame[y1:y2, x1:x2])
     face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
     face = cv2.resize(face, IMAGE_SIZE)
     face = face.astype("float32")
@@ -71,7 +115,7 @@ def check_face_blur(frame: np.ndarray, face_box: Iterable[int]) -> dict:
     gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
     
-    is_sharp = laplacian_var > 100
+    is_sharp = laplacian_var > 45
     return {
         "is_sharp": is_sharp,
         "blur_score": float(laplacian_var),
@@ -85,7 +129,7 @@ def check_face_brightness(frame: np.ndarray, face_box: Iterable[int]) -> dict:
     gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
     avg_brightness = np.mean(gray)
     
-    is_good_brightness = 50 < avg_brightness < 200
+    is_good_brightness = 35 < avg_brightness < 225
     return {
         "is_good": is_good_brightness,
         "brightness": float(avg_brightness),
@@ -97,7 +141,7 @@ def check_face_size(face_box: Iterable[int], frame_width: int, frame_height: int
     x, y, w, h = [int(value) for value in face_box]
     face_area_ratio = (w * h) / (frame_width * frame_height)
     
-    is_good_size = face_area_ratio > 0.04
+    is_good_size = face_area_ratio > 0.025
     return {
         "is_good": is_good_size,
         "area_ratio": float(face_area_ratio),
@@ -146,6 +190,12 @@ def validate_face_quality(frame: np.ndarray, face_box: Iterable[int]) -> dict:
     
     return {
         "is_valid": all_checks_pass,
+        "score": float(
+            (25 if blur_check["is_sharp"] else max(0, min(25, blur_check["blur_score"] / 2))) +
+            (25 if brightness_check["is_good"] else max(0, 25 - abs(brightness_check["brightness"] - 120) / 4)) +
+            (25 if size_check["is_good"] else max(0, size_check["area_ratio"] * 850)) +
+            (25 if not occlusion_check["has_occlusion"] else 8)
+        ),
         "blur": blur_check,
         "brightness": brightness_check,
         "size": size_check,

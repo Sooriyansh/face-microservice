@@ -3,7 +3,7 @@ from pathlib import Path
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 from config import DATASET_DIR, EMBEDDINGS_PATH
-from utils import build_embedding_model, compute_embedding, extract_face_tensor, get_face_detector
+from utils import build_embedding_model, compute_embedding, extract_face_tensor, get_face_detector, get_profile_face_detector, normalize_lighting
 
 import cv2
 
@@ -22,6 +22,7 @@ def fallback_face_tensor(image):
     start_x = max((width - side) // 2, 0)
     start_y = max((height - side) // 2, 0)
     crop = image[start_y:start_y + side, start_x:start_x + side]
+    crop = normalize_lighting(crop)
     face_tensor = cv2.resize(crop, (160, 160)).astype('float32')
     face_tensor = cv2.cvtColor(face_tensor, cv2.COLOR_BGR2RGB)
     return preprocess_input(face_tensor)
@@ -30,6 +31,7 @@ def fallback_face_tensor(image):
 def main():
     model = build_embedding_model()
     detector = get_face_detector()
+    profile_detector = get_profile_face_detector()
     labels = []
     embeddings = []
 
@@ -45,8 +47,10 @@ def main():
             face_tensor = preprocess_input(face_tensor)  # Same as extract_face_tensor
         else:
             # Real face detection for actual images
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            faces = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(70, 70))
+            enhanced = normalize_lighting(image)
+            gray = cv2.cvtColor(enhanced, cv2.COLOR_BGR2GRAY)
+            faces = list(detector.detectMultiScale(gray, scaleFactor=1.08, minNeighbors=4, minSize=(55, 55)))
+            faces.extend(profile_detector.detectMultiScale(gray, scaleFactor=1.08, minNeighbors=4, minSize=(55, 55)))
             if len(faces) == 0:
                 face_tensor = fallback_face_tensor(image)
             else:

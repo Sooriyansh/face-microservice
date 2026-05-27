@@ -14,6 +14,7 @@ let lastWorkerError = '';
 let nextRequestId = 1;
 let workerStartedAt = 0;
 const pendingRecognitions = new Map();
+const RECOGNITION_TIMEOUT_MS = Number(process.env.RECOGNITION_TIMEOUT_MS || 12000);
 
 function rejectPendingRecognitions(message) {
   for (const [requestId, pending] of pendingRecognitions.entries()) {
@@ -172,8 +173,8 @@ async function runRecognition(imageBuffer) {
     return await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         pendingRecognitions.delete(requestId);
-        reject(new Error('Recognition timed out'));
-      }, 120000);
+        reject(new Error('Recognition timed out. Keep your face centered and try again.'));
+      }, RECOGNITION_TIMEOUT_MS);
 
       pendingRecognitions.set(requestId, {
         resolve: (value) => {
@@ -194,5 +195,6 @@ async function runRecognition(imageBuffer) {
 }
 
 module.exports = {
+  getWorkerProcess,
   runRecognition,
 };

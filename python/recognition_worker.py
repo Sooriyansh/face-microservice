@@ -8,7 +8,7 @@ os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 import cv2
 import numpy as np
 
-from config import CONFIDENCE_THRESHOLD, EMBEDDINGS_PATH
+from config import CONFIDENCE_MARGIN, CONFIDENCE_THRESHOLD, EMBEDDINGS_PATH
 from utils import (
     build_embedding_model,
     compute_embedding,
@@ -16,6 +16,7 @@ from utils import (
     detect_largest_face,
     extract_face_tensor,
     get_face_detector,
+    get_profile_face_detector,
     validate_face_quality,
 )
 
@@ -29,43 +30,75 @@ def load_embeddings():
 
 
 def find_best_match(embedding, labels, embeddings):
-    scores = [cosine_similarity(embedding, stored) for stored in embeddings]
-    if not scores:
-        return None, 0.0
+    scores = np.array([cosine_similarity(embedding, stored) for stored in embeddings], dtype=np.float32)
+    if len(scores) == 0:
+        return None, 0.0, 0.0
     best_index = int(np.argmax(scores))
-    return str(labels[best_index]), float(scores[best_index])
+    best_label = str(labels[best_index])
+    same_label_scores = scores[np.array([str(label) == best_label for label in labels])]
+    other_scores = scores[np.array([str(label) != best_label for label in labels])]
+    label_score = float(np.mean(np.sort(same_label_scores)[-min(3, len(same_label_scores)):]))
+    runner_up = float(np.max(other_scores)) if len(other_scores) else 0.0
+    return best_label, max(float(scores[best_index]), label_score), runner_up
 
 
-def recognize_image(model, detector, labels, embeddings, image_path):
+def recognize_image(model, detector, profile_detector, labels, embeddings, image_path):
     image = cv2.imread(str(image_path))
     if image is None:
         raise RuntimeError("Unable to read image")
 
-    face = detect_largest_face(image, detector)
+    face = detect_largest_face(image, detector, profile_detector)
     if face is None:
-        return {"success": True, "matched": False, "message": "No face detected. Keep your face in front of the camera."}
+        return {
+            "success": True,
+            "matched": False,
+            "stage": "no_face",
+            "message": "No face detected. Center your face inside the scanner and move closer.",
+            "guidance": "Center face"
+        }
 
     quality = validate_face_quality(image, face)
-    if not quality["is_valid"]:
+    severe_quality_failure = quality["blur"]["blur_score"] < 18 or quality["brightness"]["brightness"] < 22 or quality["size"]["area_ratio"] < 0.012
+    if severe_quality_failure:
         error_msg = " | ".join(quality["error_messages"]) if quality["error_messages"] else "Face quality is poor."
         return {
             "success": True,
             "matched": False,
+            "stage": "quality_failed",
             "message": error_msg,
             "confidence": 0,
-            "quality_issues": quality["error_messages"]
+            "quality": quality,
+            "quality_issues": quality["error_messages"],
+            "box": {
+                "x": int(face[0]),
+                "y": int(face[1]),
+                "w": int(face[2]),
+                "h": int(face[3]),
+            },
         }
 
     face_tensor = extract_face_tensor(image, face)
     embedding = compute_embedding(model, face_tensor)
-    label, score = find_best_match(embedding, labels, embeddings)
+    label, score, runner_up = find_best_match(embedding, labels, embeddings)
+    margin = score - runner_up
 
-    if not label or score < CONFIDENCE_THRESHOLD:
+    if not label or score < CONFIDENCE_THRESHOLD or margin < CONFIDENCE_MARGIN:
         return {
             "success": True,
             "matched": False,
-            "message": "Face was not recognized. This person is not in the student database.",
+            "stage": "low_confidence",
+            "message": "Face detected, but identity confidence is low. Hold still, face the camera, and improve lighting.",
             "confidence": round(score, 4),
+            "runnerUpConfidence": round(runner_up, 4),
+            "margin": round(margin, 4),
+            "quality": quality,
+            "quality_issues": quality["error_messages"],
+            "box": {
+                "x": int(face[0]),
+                "y": int(face[1]),
+                "w": int(face[2]),
+                "h": int(face[3]),
+            },
         }
 
     return {
@@ -73,6 +106,10 @@ def recognize_image(model, detector, labels, embeddings, image_path):
         "matched": True,
         "label": label,
         "confidence": round(score, 4),
+        "runnerUpConfidence": round(runner_up, 4),
+        "margin": round(margin, 4),
+        "quality": quality,
+        "quality_issues": quality["error_messages"],
         "box": {
             "x": int(face[0]),
             "y": int(face[1]),
@@ -90,6 +127,7 @@ def main():
     try:
         model = build_embedding_model()
         detector = get_face_detector()
+        profile_detector = get_profile_face_detector()
         labels, embeddings = load_embeddings()
         emit({"type": "ready"})
     except Exception as error:
@@ -105,7 +143,7 @@ def main():
             request = json.loads(line)
             request_id = request["id"]
             image_path = Path(request["imagePath"])
-            result = recognize_image(model, detector, labels, embeddings, image_path)
+            result = recognize_image(model, detector, profile_detector, labels, embeddings, image_path)
             emit({"type": "result", "id": request_id, "result": result})
         except Exception as error:
             emit(
