@@ -38,15 +38,11 @@ function findPython() {
   return null;
 }
 
-const shouldInstall =
-  process.argv.includes('--force') ||
-  process.env.INSTALL_PYTHON_DEPS === '1' ||
-  process.env.RENDER === 'true' ||
-  Boolean(process.env.RENDER_SERVICE_ID);
+const shouldInstall = process.env.SKIP_PYTHON_DEPS !== '1';
 
 if (!shouldInstall) {
   console.log(
-    'Skipping Python dependency install. Set INSTALL_PYTHON_DEPS=1, or deploy on Render, when Python packages are needed.'
+    'Skipping Python dependency install because SKIP_PYTHON_DEPS=1 is set.'
   );
   process.exit(0);
 }
