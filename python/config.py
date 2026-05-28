@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -7,8 +8,8 @@ MODELS_DIR = DATA_DIR / "models"
 EMBEDDINGS_PATH = MODELS_DIR / "face_embeddings.npz"
 
 IMAGE_SIZE = (160, 160)
-CONFIDENCE_THRESHOLD = 0.66
-CONFIDENCE_MARGIN = 0.035
+CONFIDENCE_THRESHOLD = float(os.getenv("FACE_CONFIDENCE_THRESHOLD", "0.50"))
+CONFIDENCE_MARGIN = float(os.getenv("FACE_CONFIDENCE_MARGIN", "0"))
 MARK_COOLDOWN_SECONDS = 20
 
 for directory in (DATA_DIR, DATASET_DIR, MODELS_DIR):
