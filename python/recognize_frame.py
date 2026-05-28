@@ -75,7 +75,7 @@ def check_static_image_liveness(image: np.ndarray) -> dict:
     # Check 1: Texture Analysis using Laplacian variance
     # Live faces have natural texture variation
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-    results["checks"]["texture_analysis"] = laplacian_var > 100  # Threshold for natural texture
+    results["checks"]["texture_analysis"] = bool(laplacian_var > 100)  # Threshold for natural texture
     texture_score = min(laplacian_var / 500, 1.0)  # Normalize
     
     # Check 2: Color Distribution Analysis
@@ -90,7 +90,7 @@ def check_static_image_liveness(image: np.ndarray) -> dict:
     s_std = cv2.calcHist([s_channel], [0], None, [256], [0, 256]).flatten().std()
     
     color_diversity = (h_std + s_std) / 2
-    results["checks"]["color_distribution"] = color_diversity > 15  # Threshold for color variation
+    results["checks"]["color_distribution"] = bool(color_diversity > 15)  # Threshold for color variation
     color_score = min(color_diversity / 50, 1.0)  # Normalize
     
     # Check 3: Frequency Domain Analysis using FFT
@@ -107,7 +107,7 @@ def check_static_image_liveness(image: np.ndarray) -> dict:
     # Real faces have power distributed across frequencies
     # Photos have different distribution than screens
     power_concentration = center_power / (total_power + 1e-6)
-    results["checks"]["frequency_analysis"] = 0.3 < power_concentration < 0.95
+    results["checks"]["frequency_analysis"] = bool(0.3 < power_concentration < 0.95)
     freq_score = 1.0 - abs(power_concentration - 0.6) / 0.35  # Peaks around 0.6
     
     # Overall liveness decision

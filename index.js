@@ -17,10 +17,12 @@ const { deleteImages, uploadImageBuffer } = require('./services/cloudinary');
 const { tryRebuildFaceModelFromCloud } = require('./services/faceModel');
 const { getWorkerProcess, runRecognition } = require('./services/faceRecognition');
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 const AUTH_SECRET = process.env.AUTH_SECRET || 'change-this-auth-secret-in-env';
 const AUTH_COOKIE = 'faceai_auth';
-const MONGO_URI = 'mongodb+srv://mahakalkheti:oI7inIFpRPh1pNrz@cluster0.m0ab8.mongodb.net/faceAttendance?retryWrites=true&w=majority';
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  'mongodb+srv://mahakalkheti:oI7inIFpRPh1pNrz@cluster0.m0ab8.mongodb.net/faceAttendance?retryWrites=true&w=majority';
 
 mongoose
   .connect(MONGO_URI)

@@ -7,6 +7,7 @@
     "start": "node index.js",
     "postinstall": "node scripts/install-python-deps.js",
     "render-build": "node scripts/install-python-deps.js --force",
+    "render:build": "node scripts/install-python-deps.js --force",
     "setup:python": "node scripts/install-python-deps.js --force",
     "py:capture": "node scripts/run-python-script.js capture_faces.py",
     "py:train": "node scripts/run-python-script.js train_model.py",

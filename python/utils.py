@@ -115,7 +115,7 @@ def check_face_blur(frame: np.ndarray, face_box: Iterable[int]) -> dict:
     gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
     laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
     
-    is_sharp = laplacian_var > 45
+    is_sharp = bool(laplacian_var > 45)
     return {
         "is_sharp": is_sharp,
         "blur_score": float(laplacian_var),
@@ -129,7 +129,7 @@ def check_face_brightness(frame: np.ndarray, face_box: Iterable[int]) -> dict:
     gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
     avg_brightness = np.mean(gray)
     
-    is_good_brightness = 35 < avg_brightness < 225
+    is_good_brightness = bool(35 < avg_brightness < 225)
     return {
         "is_good": is_good_brightness,
         "brightness": float(avg_brightness),
@@ -141,7 +141,7 @@ def check_face_size(face_box: Iterable[int], frame_width: int, frame_height: int
     x, y, w, h = [int(value) for value in face_box]
     face_area_ratio = (w * h) / (frame_width * frame_height)
     
-    is_good_size = face_area_ratio > 0.025
+    is_good_size = bool(face_area_ratio > 0.025)
     return {
         "is_good": is_good_size,
         "area_ratio": float(face_area_ratio),
@@ -157,7 +157,7 @@ def detect_face_occlusion(frame: np.ndarray, face_box: Iterable[int]) -> dict:
     top_third = gray[: h//3, :]
     eye_region_brightness = np.mean(top_third)
     
-    has_potential_occlusion = eye_region_brightness < 40
+    has_potential_occlusion = bool(eye_region_brightness < 40)
     return {
         "has_occlusion": has_potential_occlusion,
         "eye_brightness": float(eye_region_brightness),
