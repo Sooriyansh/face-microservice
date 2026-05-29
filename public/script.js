@@ -1470,12 +1470,18 @@ function stopEmployeeFaceLogin() {
 const startEmployeeFaceLoginButton = document.getElementById('start-employee-face-login');
 if (startEmployeeFaceLoginButton) {
   startEmployeeFaceLoginButton.addEventListener('click', startEmployeeFaceLogin);
-  window.setTimeout(startEmployeeFaceLogin, 500);
 }
 
 const retryEmployeeFaceLoginButton = document.getElementById('retry-employee-face-login');
 if (retryEmployeeFaceLoginButton) {
-  retryEmployeeFaceLoginButton.addEventListener('click', scanEmployeeFaceLogin);
+  retryEmployeeFaceLoginButton.addEventListener('click', () => {
+    if (employeeLoginStream) {
+      scanEmployeeFaceLogin();
+      return;
+    }
+
+    startEmployeeFaceLogin();
+  });
 }
 
 window.addEventListener('beforeunload', () => {
@@ -1667,3 +1673,117 @@ function applyDirectoryFilters() {
 });
 
 attachEmployeeFilterCards();
+
+function enhanceRevealAnimations() {
+  const revealItems = document.querySelectorAll('.reveal');
+  if (!revealItems.length) {
+    return;
+  }
+
+  if (!('IntersectionObserver' in window)) {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
+
+  revealItems.forEach((item) => observer.observe(item));
+}
+
+function animateNumericText(element) {
+  const rawText = element.textContent.trim();
+  const match = rawText.match(/^(\d+(?:\.\d+)?)(.*)$/);
+  if (!match) {
+    return;
+  }
+
+  const target = Number(match[1]);
+  if (!Number.isFinite(target) || target <= 0) {
+    return;
+  }
+
+  const suffix = match[2] || '';
+  const decimals = match[1].includes('.') ? Math.min(match[1].split('.')[1].length, 1) : 0;
+  const duration = 760;
+  const startedAt = performance.now();
+
+  const tick = (now) => {
+    const progress = Math.min((now - startedAt) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = target * eased;
+    element.textContent = `${value.toFixed(decimals)}${suffix}`;
+
+    if (progress < 1) {
+      window.requestAnimationFrame(tick);
+    } else {
+      element.textContent = rawText;
+    }
+  };
+
+  window.requestAnimationFrame(tick);
+}
+
+function enhanceMetricCounters() {
+  const counters = document.querySelectorAll('.metric-card strong, .summary-tile strong, .session-status-card strong');
+  counters.forEach((counter) => {
+    if (counter.dataset.enhancedCounter === 'true') {
+      return;
+    }
+    counter.dataset.enhancedCounter = 'true';
+    animateNumericText(counter);
+  });
+}
+
+function enhanceButtonRipples() {
+  document.querySelectorAll('.btn').forEach((button) => {
+    if (button.dataset.rippleReady === 'true') {
+      return;
+    }
+
+    button.dataset.rippleReady = 'true';
+    button.addEventListener('click', (event) => {
+      const rect = button.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.left = `${event.clientX - rect.left}px`;
+      ripple.style.top = `${event.clientY - rect.top}px`;
+      button.appendChild(ripple);
+      window.setTimeout(() => ripple.remove(), 650);
+    });
+  });
+}
+
+function enhanceTableSearch() {
+  document.querySelectorAll('.topbar .search-box input[type="search"]:not([readonly])').forEach((input) => {
+    if (input.dataset.tableSearchReady === 'true') {
+      return;
+    }
+
+    input.dataset.tableSearchReady = 'true';
+    input.addEventListener('input', () => {
+      const query = input.value.trim().toLowerCase();
+      document.querySelectorAll('tbody tr, .timeline-stream .event-row, .employee-filter-card').forEach((row) => {
+        row.classList.toggle('hidden', Boolean(query) && !row.textContent.toLowerCase().includes(query));
+      });
+    });
+  });
+}
+
+function enhanceUiInteractions() {
+  enhanceRevealAnimations();
+  enhanceMetricCounters();
+  enhanceButtonRipples();
+  enhanceTableSearch();
+}
+
+enhanceUiInteractions();

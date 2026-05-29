@@ -62,25 +62,43 @@ async function restoreDatasetFromMongo() {
     .lean();
 
   let restoredCount = 0;
+  const skippedImages = [];
 
   for (const student of students) {
     const labelDir = path.join(DATASET_ROOT, student.faceLabel);
     await fs.mkdir(labelDir, { recursive: true });
+    let restoredForStudent = 0;
 
     for (const [index, image] of student.enrollmentImages.entries()) {
       if (!image.url) {
+        skippedImages.push(`${student.faceLabel}/${image.fileName || index}: missing URL`);
         continue;
       }
 
       const fileName = image.fileName || `${String(index).padStart(3, '0')}.jpg`;
-      const imageBuffer = await downloadImage(image.url);
-      await fs.writeFile(path.join(labelDir, fileName), imageBuffer);
-      restoredCount += 1;
+      try {
+        const imageBuffer = await downloadImage(image.url);
+        await fs.writeFile(path.join(labelDir, fileName), imageBuffer);
+        restoredCount += 1;
+        restoredForStudent += 1;
+      } catch (error) {
+        skippedImages.push(`${student.faceLabel}/${fileName}: ${error.message}`);
+      }
+    }
+
+    if (!restoredForStudent) {
+      await fs.rm(labelDir, { recursive: true, force: true });
     }
   }
 
   if (!restoredCount) {
-    throw new Error('No enrollment images found in MongoDB to train the face model.');
+    const skippedSummary = skippedImages.length ? ` Skipped images: ${skippedImages.slice(0, 5).join('; ')}` : '';
+    throw new Error(`No downloadable enrollment images found in MongoDB to train the face model.${skippedSummary}`);
+  }
+
+  if (skippedImages.length) {
+    console.warn(`Skipped ${skippedImages.length} unavailable enrollment image(s) while rebuilding the face model.`);
+    skippedImages.slice(0, 10).forEach((item) => console.warn(`- ${item}`));
   }
 }
 
