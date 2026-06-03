@@ -27,6 +27,10 @@
     "dotenv": "^17.4.2",
     "ejs": "^5.0.1",
     "express": "^5.2.1",
-    "mongoose": "^9.4.1"
+    "firebase-admin": "^13.6.0",
+    "mongoose": "^9.4.1",
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.1",
+    "web-push": "^3.6.7"
   }
 }

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Authentication | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="auth-page">
+  <div class="auth-particles" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  <header class="auth-top-nav">
+    <a href="/login" class="brand-block auth-brand">
+      <span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span>
+      <span><strong>FaceAI Attend</strong><small>AI Attendance + Monitoring</small></span>
+    </a>
+    <a href="/admin-login" class="admin-login-glow"><i class="fa-solid fa-user-shield"></i> Admin Login</a>
+  </header>
+
+  <main class="auth-shell enterprise-auth-shell">
+    <section class="auth-panel employee-face-login split-auth-panel reveal">
+      <div>
+        <span class="status-chip"><span class="live-dot"></span> AI biometric access</span>
+        <h1>Face Recognition Login</h1>
+        <p>Login securely using facial authentication.</p>
+      </div>
+
+      <div class="camera-shell face-login-shell">
+        <div class="camera-frame scanner-frame biometric-camera">
+          <video id="employee-login-camera-feed" autoplay playsinline muted></video>
+          <canvas id="employee-login-camera-canvas" hidden></canvas>
+          <span class="camera-reticle"></span>
+          <span class="scan-line camera-scan"></span>
+          <span class="face-mesh-overlay" aria-hidden="true"></span>
+          <span class="face-box" id="employee-login-face-box" hidden></span>
+          <div class="scanner-state" id="employee-login-scanner-state">Initializing Camera</div>
+          <div class="face-guide"><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="quality-grid">
+          <div><strong id="employee-login-confidence">Confidence 0%</strong><span>Identity match confidence</span></div>
+          <div><strong id="employee-login-state">Liveness Ready</strong><span>Anti-spoof and alignment state</span></div>
+        </div>
+        <div class="auth-feature-grid">
+          <span><i class="fa-solid fa-video"></i> Live Camera Preview</span>
+          <span><i class="fa-solid fa-crosshairs"></i> AI Face Detection</span>
+          <span><i class="fa-solid fa-vector-square"></i> Face Mesh Overlay</span>
+          <span><i class="fa-solid fa-user-check"></i> Liveness Detection</span>
+        </div>
+        <div class="camera-controls">
+          <button type="button" id="start-employee-face-login" class="btn btn-primary"><i class="fa-solid fa-fingerprint"></i> Start Face Scan</button>
+          <button type="button" id="retry-employee-face-login" class="btn btn-secondary"><i class="fa-solid fa-rotate-right"></i> Retry Scan</button>
+        </div>
+        <p id="employee-face-login-status" class="form-status">Start the face scan to detect, analyze, match identity, and open the employee dashboard.</p>
+      </div>
+    </section>
+
+    <section class="auth-panel split-auth-panel employee-password-panel reveal">
+      <div>
+        <span class="status-chip"><span class="live-dot"></span> Secure employee session</span>
+        <h1>Employee Login</h1>
+        <p>Sign in using your employee credentials.</p>
+      </div>
+      <% if (error) { %><p class="form-status status-error"><%= error %></p><% } %>
+      <form class="stack-form auth-form" id="employee-password-login-form" action="/login" method="POST" novalidate>
+        <input type="hidden" name="next" value="<%= nextUrl %>">
+        <label><span>Employee ID / Email</span><input type="text" name="email" placeholder="EMP-1042 or employee@company.com" required></label>
+        <label class="password-field"><span>Password</span><input id="employee-login-password" type="password" name="password" placeholder="Enter password" required></label>
+        <div class="auth-options-row">
+          <label class="check-control"><input type="checkbox" name="remember"> <span>Remember Me</span></label>
+          <label class="check-control"><input type="checkbox" class="show-password-toggle" data-target="employee-login-password"> <span>Show Password</span></label>
+          <a href="/forgot-password">Forgot Password</a>
+        </div>
+        <button class="btn btn-primary wide" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        <button class="btn btn-secondary wide" type="button" id="credential-start-face-login"><i class="fa-solid fa-face-smile"></i> Login with Face Recognition</button>
+        <p id="employee-login-form-status" class="form-status">Employee ID/email and password are required for credential login.</p>
+      </form>
+      <p class="auth-switch">Need access? <a href="/signup">Create Employee Account</a></p>
+      <div class="auth-security-strip">
+        <span><i class="fa-solid fa-key"></i> JWT Sessions</span>
+        <span><i class="fa-solid fa-lock"></i> Password Hashing</span>
+        <span><i class="fa-solid fa-shield-virus"></i> Rate Limited APIs</span>
+      </div>
+    </section>
+  </main>
+  <div class="toast-stack" id="toast-stack"></div>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>
+

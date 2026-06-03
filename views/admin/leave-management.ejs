@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Requests | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="admin">
+  <% const safeLeaves = typeof leaves !== 'undefined' ? leaves : []; %>
+  <% const stats = typeof analytics !== 'undefined' ? analytics : { total: 0, approved: 0, rejected: 0, onLeaveToday: 0, departmentStats: {} }; %>
+  <div class="enterprise-layout">
+    <aside class="side-nav">
+      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>HRMS Console</small></span></a>
+      <nav class="side-menu">
+        <a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
+        <a class="active" href="/leave-requests"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
+        <a href="/daily-reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a>
+        <a href="/overtime-dashboard"><i class="fa-solid fa-business-time"></i>Overtime</a>
+        <a href="/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+      </nav>
+      <div class="rbac-card"><span class="security-badge">Admin role</span><p>Approve leave, review remarks, and export HR reports.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar">
+        <button class="mobile-menu-toggle" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+        <label class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="leave-search" placeholder="Search leave requests"></label>
+        <div class="topbar-actions">
+          <a class="btn btn-secondary" href="/api/hrms/admin/export/leaves/csv"><i class="fa-solid fa-file-csv"></i>CSV</a>
+          <a class="btn btn-secondary" href="/api/hrms/admin/export/leaves/excel"><i class="fa-solid fa-file-excel"></i>Excel</a>
+          <a class="btn btn-secondary" href="/api/hrms/admin/export/leaves/pdf"><i class="fa-solid fa-file-pdf"></i>PDF</a>
+        </div>
+      </header>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Leave analytics</span><h1>Leave Requests</h1><p>Review pending applications, approve or reject with remarks, and track department-wise leave patterns.</p></div></section>
+      <section class="metric-grid compact reveal">
+        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-inbox"></i></span><p>Total Leave Requests</p><strong><%= stats.total %></strong></div>
+        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-circle-check"></i></span><p>Approved Leaves</p><strong><%= stats.approved %></strong></div>
+        <div class="metric-card"><span class="metric-icon danger"><i class="fa-solid fa-circle-xmark"></i></span><p>Rejected Leaves</p><strong><%= stats.rejected %></strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-user-clock"></i></span><p>Employees on Leave Today</p><strong><%= stats.onLeaveToday %></strong></div>
+      </section>
+      <section class="panel reveal">
+        <div class="panel-header split"><div><p class="eyebrow">Approval queue</p><h2>All Leave Requests</h2></div><div class="filter-controls"><select id="leave-status-filter"><option value="">All</option><option>Pending</option><option>Approved</option><option>Rejected</option></select></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee Name</th><th>Department</th><th>Leave Type</th><th>Days</th><th>Reason</th><th>Applied Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="admin-leaves-body">
+              <% if (!safeLeaves.length) { %><tr><td colspan="8">No leave requests found.</td></tr><% } %>
+              <% safeLeaves.forEach((leave) => { %>
+                <tr data-status="<%= leave.status %>">
+                  <td><span class="person-cell"><span class="avatar"><%= (leave.employee?.name || 'EM').slice(0,2).toUpperCase() %></span><strong><%= leave.employee?.name || 'Employee' %></strong></span></td>
+                  <td><%= leave.employee?.department || '-' %></td>
+                  <td><%= leave.leaveType %></td>
+                  <td><%= leave.days %></td>
+                  <td><%= leave.reason %></td>
+                  <td><%= new Date(leave.createdAt).toLocaleDateString() %></td>
+                  <td><span class="status-badge status-<%= String(leave.status).toLowerCase() %>"><%= leave.status %></span><small><%= leave.adminRemarks || '' %></small></td>
+                  <td>
+                    <% if (leave.status === 'Pending') { %>
+                      <div class="leave-action-group">
+                        <button class="btn btn-primary leave-decision" data-id="<%= leave._id %>" data-status="Approved" type="button"><i class="fa-solid fa-check"></i>Approve Leave</button>
+                        <button class="btn btn-secondary leave-decision" data-id="<%= leave._id %>" data-status="Rejected" type="button"><i class="fa-solid fa-xmark"></i>Reject with Reason</button>
+                      </div>
+                    <% } else { %>-<% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel reveal"><div class="panel-header"><div><p class="eyebrow">Department-wise leave statistics</p><h2>Leave Distribution</h2></div></div><div class="mini-chart-grid"><% Object.entries(stats.departmentStats || {}).forEach(([department, count]) => { %><div class="chart-tile"><strong><%= department %></strong><span style="--w:<%= Math.min(count * 18, 100) %>%"></span><small><%= count %> request(s)</small></div><% }) %></div></section>
+    </main>
+  </div>
+  <div class="toast-stack" id="toast-stack"></div>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>
+

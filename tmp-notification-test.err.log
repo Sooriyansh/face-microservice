@@ -1,0 +1,8 @@
+Face recognition warmup skipped: Traceback (most recent call last):
+  File "D:\all\collage-project\python\recognition_worker.py", line 12, in <module>
+    from utils import (
+    ...<8 lines>...
+    )
+  File "D:\all\collage-project\python\utils.py", line 8, in <module>
+    import tensorflow as tf
+ModuleNotFoundError: No module named 'tensorflow'

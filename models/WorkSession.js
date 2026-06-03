@@ -80,6 +80,35 @@ const workSessionSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    dailyPlan: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 5000,
+    },
+    taskStatus: {
+      type: String,
+      enum: ['Completed', 'Partially Completed', 'Pending', ''],
+      default: '',
+    },
+    workSummary: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 5000,
+    },
+    pendingWork: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 4000,
+    },
+    additionalNotes: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 3000,
+    },
     checkoutNote: {
       type: String,
       default: '',
@@ -113,6 +142,26 @@ const workSessionSchema = new mongoose.Schema(
       default: 0,
       min: 0,
       max: 100,
+    },
+    totalWorkingMs: {
+      type: Number,
+      default: 0,
+    },
+    overtimeMs: {
+      type: Number,
+      default: 0,
+    },
+    weekendMs: {
+      type: Number,
+      default: 0,
+    },
+    holidayMs: {
+      type: Number,
+      default: 0,
+    },
+    standardShiftMs: {
+      type: Number,
+      default: 8 * 60 * 60 * 1000,
     },
     incompleteReason: {
       type: String,

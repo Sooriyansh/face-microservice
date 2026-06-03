@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overtime Dashboard | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="admin">
+  <% const safeRows = typeof rows !== 'undefined' ? rows : []; const fmt = (ms) => { const m = Math.max(Math.round(Number(ms || 0) / 60000), 0); const h = Math.floor(m / 60); return h ? `${h}h ${m % 60}m` : `${m}m`; }; %>
+  <div class="enterprise-layout">
+    <aside class="side-nav">
+      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Overtime Console</small></span></a>
+      <nav class="side-menu"><a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a><a href="/leave-requests"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a><a href="/daily-reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a><a class="active" href="/overtime-dashboard"><i class="fa-solid fa-business-time"></i>Overtime</a></nav>
+      <div class="rbac-card"><span class="security-badge">Admin role</span><p>Overtime is calculated from attendance start to checkout against an 8 hour shift.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar"><button class="mobile-menu-toggle" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button><label class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="overtime-search" placeholder="Search overtime leaderboard"></label><div class="topbar-actions"><a class="btn btn-secondary" href="/api/hrms/admin/export/overtime/csv"><i class="fa-solid fa-file-csv"></i>CSV</a><a class="btn btn-secondary" href="/api/hrms/admin/export/overtime/excel"><i class="fa-solid fa-file-excel"></i>Excel</a><a class="btn btn-secondary" href="/api/hrms/admin/export/overtime/pdf"><i class="fa-solid fa-file-pdf"></i>PDF</a></div></header>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Overtime analytics</span><h1>Overtime Dashboard</h1><p>Track top performers, active employees, weekend work, and department-wise overtime trends.</p></div></section>
+      <section class="metric-grid compact reveal">
+        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-clock"></i></span><p>Total Working Hours</p><strong><%= fmt(safeRows.reduce((t, r) => t + r.totalWorkingMs, 0)) %></strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-bolt"></i></span><p>Overtime Hours</p><strong><%= fmt(safeRows.reduce((t, r) => t + r.overtimeMs, 0)) %></strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-calendar-week"></i></span><p>Weekend Hours</p><strong><%= fmt(safeRows.reduce((t, r) => t + r.weekendMs, 0)) %></strong></div>
+        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-ranking-star"></i></span><p>Top Performers</p><strong><%= safeRows.filter((r) => r.overtimeMs > 0).length %></strong></div>
+      </section>
+      <section class="admin-grid reveal">
+        <div class="panel"><div class="panel-header"><div><p class="eyebrow">Overtime leaderboard</p><h2>Most Active Employees</h2></div></div><div class="table-wrap"><table><thead><tr><th>Employee Name</th><th>Department</th><th>Total Working Hours</th><th>Overtime Hours</th><th>Weekend Hours</th></tr></thead><tbody id="overtime-body"><% if (!safeRows.length) { %><tr><td colspan="5">No overtime data found.</td></tr><% } %><% safeRows.forEach((row) => { %><tr><td><span class="person-cell"><span class="avatar"><%= row.employeeName.slice(0,2).toUpperCase() %></span><strong><%= row.employeeName %></strong></span></td><td><%= row.department %></td><td><%= fmt(row.totalWorkingMs) %></td><td><span class="status-badge status-checkout"><%= fmt(row.overtimeMs) %></span></td><td><span class="status-badge status-sleep"><%= fmt(row.weekendMs) %></span></td></tr><% }) %></tbody></table></div></div>
+        <aside class="panel"><div class="panel-header"><div><p class="eyebrow">Department-wise overtime analysis</p><h2>Trend View</h2></div></div><div class="mini-chart-grid"><% safeRows.slice(0,8).forEach((row) => { %><div class="chart-tile"><strong><%= row.department %></strong><span style="--w:<%= Math.min(Math.round(row.overtimeMs / 1800000) * 10, 100) %>%"></span><small><%= row.employeeName %> · <%= fmt(row.overtimeMs) %></small></div><% }) %></div></aside>
+      </section>
+    </main>
+  </div>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>
+

@@ -1,4 +1,17 @@
 const WorkSession = require('../models/WorkSession');
+const DailyWorkReport = require('../models/DailyWorkReport');
+const SystemEvent = require('../models/SystemEvent');
+const { calculateSessionMetrics } = require('./hrms');
+const { notifyAdmins } = require('./notifications');
+
+function recordHrmsEvent(fields) {
+  return SystemEvent.create({
+    eventId: Date.now() + Math.floor(Math.random() * 1000),
+    sourceLog: 'HRMS',
+    externalId: `hrms-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    ...fields,
+  }).catch(() => {});
+}
 
 const TRACKING_START_HOUR = 8;
 const CHECKED_OUT_STATUSES = new Set(['checked_out']);
@@ -174,6 +187,62 @@ async function startSessionAfterAttendance({ employee, attendance, attendanceTim
   });
 }
 
+async function joinWorkSession({ employee, dailyPlan, joinedAt = new Date() }) {
+  const cleanPlan = String(dailyPlan || '').trim();
+  if (!cleanPlan) {
+    const error = new Error('Please enter your work plan before starting the work session.');
+    error.status = 400;
+    throw error;
+  }
+
+  const dateKey = getDateKey(joinedAt);
+  let session = await WorkSession.findOne({ employee: employee._id, dateKey });
+
+  if (session && session.status === 'checked_out') {
+    const error = new Error('Today\'s work session is already checked out.');
+    error.status = 400;
+    throw error;
+  }
+
+  if (!session) {
+    session = new WorkSession({
+      employee: employee._id,
+      dateKey,
+      status: 'active',
+      deviceState: 'Active',
+      monitoringPermission: 'allowed',
+      startedAt: joinedAt,
+      lastActivityAt: joinedAt,
+      productivityScore: 78,
+      events: [],
+    });
+  }
+
+  session.dailyPlan = cleanPlan;
+  session.startedAt = session.startedAt || joinedAt;
+  session.lastActivityAt = joinedAt;
+  session.status = 'active';
+  session.deviceState = 'Active';
+  session.events.push({
+    type: 'Join Work',
+    category: 'session',
+    message: 'Work session started successfully.',
+    occurredAt: joinedAt,
+    deviceInfo: 'Employee Dashboard',
+    metadata: { dailyPlan: cleanPlan },
+  });
+
+  await session.save();
+  await recordHrmsEvent({
+    user: employee.name,
+    event: 'Employee Joined Work',
+    meaning: `${employee.name} started a work session.`,
+    occurredAt: joinedAt,
+    provider: 'HRMS',
+  });
+  return session;
+}
+
 async function recordTrackingEvent(rawEvent) {
   const occurredAt = rawEvent.occurredAt ? new Date(rawEvent.occurredAt) : new Date();
   const dateKey = getDateKey(occurredAt);
@@ -280,15 +349,26 @@ async function setMonitoringPermission(sessionId, permission) {
   return session;
 }
 
-async function checkoutSession(sessionId, note) {
-  const cleanNote = String(note || '').trim();
-  if (!cleanNote) {
-    const error = new Error('Please enter what work you completed today.');
+async function checkoutSession(sessionId, reportInput = {}) {
+  const report = typeof reportInput === 'string' ? { workSummary: reportInput } : reportInput || {};
+  const cleanSummary = String(report.workSummary || report.note || '').trim();
+  const taskStatus = ['Completed', 'Partially Completed', 'Pending'].includes(report.taskStatus)
+    ? report.taskStatus
+    : 'Pending';
+  const completedTasks = Array.isArray(report.completedTasks)
+    ? report.completedTasks.map((task) => String(task || '').trim()).filter(Boolean)
+    : [];
+  const pendingTasks = String(report.pendingTasks || report.pendingWork || '').trim();
+  const tomorrowPlan = String(report.tomorrowPlan || report.dailyPlan || 'Review pending work and continue planned tasks.').trim();
+  const additionalNotes = String(report.additionalNotes || '').trim();
+
+  if (!cleanSummary || !pendingTasks) {
+    const error = new Error('Please complete the work summary and pending work before checkout.');
     error.status = 400;
     throw error;
   }
 
-  const session = await WorkSession.findById(sessionId);
+  const session = await WorkSession.findById(sessionId).populate('employee');
   if (!session) {
     const error = new Error('Work session was not found.');
     error.status = 404;
@@ -300,15 +380,25 @@ async function checkoutSession(sessionId, note) {
   }
 
   const now = new Date();
+  const metrics = calculateSessionMetrics(session, now);
   session.status = 'checked_out';
   session.deviceState = 'Checked Out';
   session.checkoutAt = now;
-  session.checkoutNote = cleanNote;
+  session.checkoutNote = cleanSummary;
+  session.taskStatus = taskStatus;
+  session.workSummary = cleanSummary;
+  session.pendingWork = pendingTasks;
+  session.additionalNotes = additionalNotes;
+  session.totalWorkingMs = metrics.totalWorkingMs;
+  session.overtimeMs = metrics.overtimeMs;
+  session.weekendMs = metrics.weekendMs;
+  session.holidayMs = metrics.holidayMs;
+  session.standardShiftMs = metrics.standardShiftMs;
   session.productivityScore = calculateProductivityScore(session);
   session.events.push({
     type: 'Check-Out Completed',
     category: 'attendance',
-    message: cleanNote,
+    message: cleanSummary,
     occurredAt: now,
     deviceInfo: 'Employee Dashboard',
   });
@@ -321,6 +411,77 @@ async function checkoutSession(sessionId, note) {
   });
 
   await session.save();
+  await DailyWorkReport.findOneAndUpdate(
+    { employee: session.employee._id || session.employee, reportDate: session.dateKey },
+    {
+      employee: session.employee._id || session.employee,
+      workSession: session._id,
+      attendance: session.attendance || null,
+      reportDate: session.dateKey,
+      joinTime: session.startedAt || session.attendanceTime || null,
+      dailyPlan: session.dailyPlan || '',
+      taskStatus,
+      workSummary: cleanSummary,
+      completedTasks,
+      pendingTasks,
+      tomorrowPlan,
+      additionalNotes,
+      checkoutTime: now,
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  await recordHrmsEvent({
+    user: session.employee?.name || 'Employee',
+    event: metrics.overtimeMs > 0 ? 'Employee Worked Overtime' : 'Daily Report Submitted',
+    meaning:
+      metrics.overtimeMs > 0
+        ? `Daily report submitted with ${Math.round(metrics.overtimeMs / 60000)} overtime minute(s).`
+        : 'Daily work report submitted and checkout completed.',
+    occurredAt: now,
+    provider: 'HRMS',
+  });
+  await notifyAdmins({
+    senderId: session.employee?._id || null,
+    senderModel: 'Student',
+    senderRole: 'employee',
+    title: 'Daily Report Submitted',
+    message: "Employee submitted today's work report.",
+    type: 'Daily Report',
+    priority: 'normal',
+    actionUrl: '/daily-reports',
+    metadata: { sessionId: session._id, employeeId: session.employee?._id || session.employee },
+  });
+  await notifyAdmins({
+    senderId: session.employee?._id || null,
+    senderModel: 'Student',
+    senderRole: 'employee',
+    title: 'Employee Checked Out',
+    message: 'Work session completed successfully.',
+    type: 'Checkout',
+    priority: 'normal',
+    actionUrl: '/daily-reports',
+    metadata: { sessionId: session._id, employeeId: session.employee?._id || session.employee },
+  });
+
+  if (metrics.overtimeMs > 0) {
+    await notifyAdmins({
+      senderId: session.employee?._id || null,
+      senderModel: 'Student',
+      senderRole: 'employee',
+      title: 'Overtime Detected',
+      message: 'Employee exceeded standard working hours.',
+      type: 'Overtime',
+      priority: 'high',
+      actionUrl: '/overtime-dashboard',
+      metadata: {
+        sessionId: session._id,
+        employeeId: session.employee?._id || session.employee,
+        overtimeMs: metrics.overtimeMs,
+      },
+    });
+  }
+
   return session;
 }
 
@@ -329,6 +490,7 @@ module.exports = {
   checkoutSession,
   deriveSessionStatus,
   getDateKey,
+  joinWorkSession,
   recordTrackingEvent,
   setMonitoringPermission,
   startSessionAfterAttendance,

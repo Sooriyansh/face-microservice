@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Admin Account | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="auth-page">
+  <div class="auth-particles" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+  <header class="auth-top-nav">
+    <a href="/login" class="brand-block auth-brand">
+      <span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span>
+      <span><strong>FaceAI Attend</strong><small>Admin Account Setup</small></span>
+    </a>
+    <a href="/admin-login" class="admin-login-glow"><i class="fa-solid fa-user-shield"></i> Admin Login</a>
+  </header>
+
+  <main class="auth-shell single-auth-shell">
+    <section class="auth-panel admin-auth-panel reveal">
+      <div>
+        <span class="status-chip"><span class="live-dot"></span> Password-only admin signup</span>
+        <h1>Create Admin Account</h1>
+        <p>Admin authentication uses email and password only.</p>
+      </div>
+      <% if (error) { %><p class="form-status status-error"><%= error %></p><% } %>
+      <form class="stack-form auth-form" action="/signup" method="POST">
+        <input type="hidden" name="role" value="admin">
+        <label><span>Full Name</span><input type="text" name="name" placeholder="Admin User" required></label>
+        <label><span>Email Address</span><input type="email" name="email" placeholder="admin@company.com" required></label>
+        <label><span>Password</span><input id="admin-signup-password" type="password" name="password" minlength="6" placeholder="Minimum 6 characters" required></label>
+        <label><span>Confirm Password</span><input id="admin-signup-confirm-password" type="password" name="confirmPassword" minlength="6" placeholder="Confirm password" required></label>
+        <label class="check-control"><input type="checkbox" class="show-password-toggle" data-target="admin-signup-password,admin-signup-confirm-password"> <span>Show Password</span></label>
+        <button class="btn btn-primary wide" type="submit"><i class="fa-solid fa-user-plus"></i> Create Admin Account</button>
+      </form>
+      <p class="auth-switch">Already have admin access? <a href="/admin-login">Admin Sign In</a></p>
+    </section>
+  </main>
+  <div class="toast-stack" id="toast-stack"></div>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>
+
