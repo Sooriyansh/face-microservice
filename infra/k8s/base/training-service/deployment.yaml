@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training-service
+  template:
+    metadata:
+      labels:
+        app: training-service
+    spec:
+      containers:
+        - name: training-service
+          image: face-attendance/training-service:latest
+          ports:
+            - containerPort: 8092
+          env:
+            - name: PORT
+              value: "8092"
+            - name: PYTHON_EXECUTABLE
+              value: python3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8092
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8092
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-service
+spec:
+  selector:
+    app: training-service
+  ports:
+    - name: http
+      port: 8092
+      targetPort: 8092
+

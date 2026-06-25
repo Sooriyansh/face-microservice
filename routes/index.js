@@ -1,11 +1,11 @@
 const authRoutes = require('./auth.routes');
-const adminDashboardRoutes = require('./admin/dashboard.routes');
-const adminAttendanceRoutes = require('./admin/attendance.routes');
-const adminLeaveRoutes = require('./admin/leave.routes');
-const adminMonitoringRoutes = require('./admin/monitoring.routes');
-const adminOvertimeRoutes = require('./admin/overtime.routes');
-const adminReportsRoutes = require('./admin/reports.routes');
-const employeeDashboardRoutes = require('./employee/dashboard.routes');
+const adminDashboardRoutes = require('../admin/routes/dashboard.routes');
+const adminAttendanceRoutes = require('../admin/routes/attendance.routes');
+const adminLeaveRoutes = require('../admin/routes/leave.routes');
+const adminMonitoringRoutes = require('../admin/routes/monitoring.routes');
+const adminOvertimeRoutes = require('../admin/routes/overtime.routes');
+const adminReportsRoutes = require('../admin/routes/reports.routes');
+const employeeDashboardRoutes = require('../emp/routes/dashboard.routes');
 const apiRoutes = require('./api');
 
 function registerRoutes(app) {

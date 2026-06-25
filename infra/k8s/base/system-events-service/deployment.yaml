@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: system-events-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: system-events-service
+  template:
+    metadata:
+      labels:
+        app: system-events-service
+    spec:
+      containers:
+        - name: system-events-service
+          image: face-attendance/system-events-service:latest
+          ports:
+            - containerPort: 8094
+          env:
+            - name: PORT
+              value: "8094"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: system-events-service-secrets
+                  key: mongo-uri
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8094
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8094
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: system-events-service
+spec:
+  selector:
+    app: system-events-service
+  ports:
+    - name: http
+      port: 8094
+      targetPort: 8094
+

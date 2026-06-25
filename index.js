@@ -23,7 +23,11 @@ mongoose
   .catch((error) => console.error('MongoDB connection error:', error.message));
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', [
+  path.join(__dirname, 'admin', 'views'),
+  path.join(__dirname, 'emp', 'views'),
+  path.join(__dirname, 'views'),
+]);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '50mb' }));

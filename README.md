@@ -20,9 +20,18 @@ Professional microservices architecture docs and deployment scaffolding are avai
 - `docs/microservices-architecture.md` - DDD/Clean Architecture service boundaries, APIs, events, security, observability, and migration plan
 - `docs/microservices-contracts.md` - REST and event contract examples
 - `docs/service-catalog.md` - service runtime, port, dependency, and health endpoint catalog
+- `docs/api-docs.md` - gateway routes and API endpoint list
+- `docs/deployment-guide.md` - Docker Compose and Kubernetes deployment guide
+- `docs/developer-guide.md` - migration and development guide
 - `infra/docker-compose.microservices.yml` - local microservices infrastructure and service topology starter
 - `infra/k8s/base/` - Kubernetes-ready base manifests
 - `services-template/` - reusable Node.js and Python service Docker templates
+
+Microservices run karne ke liye:
+
+```bash
+docker compose -f infra/docker-compose.microservices.yml up --build
+```
 
 ## Setup
 

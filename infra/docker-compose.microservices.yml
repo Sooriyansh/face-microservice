@@ -92,27 +92,39 @@ services:
 
   api-gateway:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/api-gateway/Dockerfile
     ports:
       - "8080:8080"
     environment:
       SERVICE_NAME: api-gateway
       PORT: 8080
+      AUTH_SECRET: change-me
       REDIS_URL: redis://redis:6379
       AUTH_SERVICE_URL: http://auth-service:8081
+      STUDENT_SERVICE_URL: http://student-service:8082
+      ATTENDANCE_SERVICE_URL: http://attendance-service:8083
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      SYSTEM_EVENTS_SERVICE_URL: http://system-events-service:8094
+      ANALYTICS_SERVICE_URL: http://analytics-service:8088
+      AUDIT_SERVICE_URL: http://audit-service:8087
+      FACE_RECOGNITION_SERVICE_URL: http://face-recognition-service:8093
+      TRAINING_SERVICE_URL: http://training-service:8092
     depends_on:
       - redis
       - auth-service
 
   auth-service:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/auth-service/Dockerfile
     ports:
       - "8081:8081"
     environment:
       SERVICE_NAME: auth-service
       PORT: 8081
-      MONGO_URI: mongodb://auth-db:27017/auth
+      AUTH_SECRET: change-me
+      MONGO_URI: mongodb://auth-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - auth-db
@@ -120,13 +132,14 @@ services:
 
   student-service:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/student-service/Dockerfile
     ports:
       - "8082:8082"
     environment:
       SERVICE_NAME: student-service
       PORT: 8082
-      MONGO_URI: mongodb://student-db:27017/students
+      MONGO_URI: mongodb://student-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - student-db
@@ -134,13 +147,14 @@ services:
 
   attendance-service:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/attendance-service/Dockerfile
     ports:
       - "8083:8083"
     environment:
       SERVICE_NAME: attendance-service
       PORT: 8083
-      MONGO_URI: mongodb://attendance-db:27017/attendance
+      MONGO_URI: mongodb://attendance-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - attendance-db
@@ -148,13 +162,14 @@ services:
 
   notification-service:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/notification-service/Dockerfile
     ports:
       - "8084:8084"
     environment:
       SERVICE_NAME: notification-service
       PORT: 8084
-      MONGO_URI: mongodb://notification-db:27017/notifications
+      MONGO_URI: mongodb://notification-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - notification-db
@@ -190,15 +205,16 @@ services:
       - rabbitmq
       - minio
 
-  audit-log-service:
+  audit-service:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/audit-service/Dockerfile
     ports:
       - "8087:8087"
     environment:
-      SERVICE_NAME: audit-log-service
+      SERVICE_NAME: audit-service
       PORT: 8087
-      MONGO_URI: mongodb://audit-db:27017/audit
+      MONGO_URI: mongodb://audit-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - audit-db
@@ -206,13 +222,14 @@ services:
 
   analytics-service:
     build:
-      context: ../services-template/node-service
+      context: ..
+      dockerfile: services/analytics-service/Dockerfile
     ports:
       - "8088:8088"
     environment:
       SERVICE_NAME: analytics-service
       PORT: 8088
-      MONGO_URI: mongodb://analytics-db:27017/analytics
+      MONGO_URI: mongodb://analytics-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - analytics-db
@@ -245,15 +262,16 @@ services:
       - rabbitmq
       - minio
 
-  face-training-service:
+  training-service:
     build:
-      context: ../services-template/python-service
+      context: ..
+      dockerfile: services/training-service/Dockerfile
     ports:
       - "8092:8092"
     environment:
-      SERVICE_NAME: face-training-service
+      SERVICE_NAME: training-service
       PORT: 8092
-      MONGO_URI: mongodb://face-db:27017/face
+      MONGO_URI: mongodb://face-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
       S3_ENDPOINT: http://minio:9000
     depends_on:
@@ -263,13 +281,14 @@ services:
 
   face-recognition-service:
     build:
-      context: ../services-template/python-service
+      context: ..
+      dockerfile: services/face-recognition-service/Dockerfile
     ports:
       - "8093:8093"
     environment:
       SERVICE_NAME: face-recognition-service
       PORT: 8093
-      MONGO_URI: mongodb://face-db:27017/face
+      MONGO_URI: mongodb://face-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
       S3_ENDPOINT: http://minio:9000
     depends_on:
@@ -277,15 +296,16 @@ services:
       - rabbitmq
       - minio
 
-  system-event-monitoring-service:
+  system-events-service:
     build:
-      context: ../services-template/python-service
+      context: ..
+      dockerfile: services/system-events-service/Dockerfile
     ports:
       - "8094:8094"
     environment:
-      SERVICE_NAME: system-event-monitoring-service
+      SERVICE_NAME: system-events-service
       PORT: 8094
-      MONGO_URI: mongodb://timeline-db:27017/system-events
+      MONGO_URI: mongodb://timeline-db:27017/faceAttendance
       BROKER_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
       - timeline-db

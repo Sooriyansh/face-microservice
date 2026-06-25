@@ -13,6 +13,13 @@
     "py:train": "node scripts/run-python-script.js train_model.py",
     "py:recognize": "node scripts/run-python-script.js recognize_attendance.py",
     "py:system-events": "node scripts/run-python-script.js system_event_monitor.py",
+    "microservices:up": "docker compose -f infra/docker-compose.microservices.yml up --build",
+    "service:gateway": "npm --prefix services/api-gateway start",
+    "service:auth": "npm --prefix services/auth-service start",
+    "service:students": "npm --prefix services/student-service start",
+    "service:attendance": "npm --prefix services/attendance-service start",
+    "service:recognition": "npm --prefix services/face-recognition-service start",
+    "service:training": "npm --prefix services/training-service start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {

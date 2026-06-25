@@ -8,5 +8,9 @@ resources:
   - student-service/deployment.yaml
   - attendance-service/deployment.yaml
   - face-recognition-service/deployment.yaml
+  - training-service/deployment.yaml
+  - notification-service/deployment.yaml
+  - system-events-service/deployment.yaml
+  - analytics-service/deployment.yaml
+  - audit-service/deployment.yaml
   - observability/servicemonitor.yaml
-
