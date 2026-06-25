@@ -2775,11 +2775,91 @@ function enhanceTableSearch() {
   });
 }
 
+function initPerformanceDashboard() {
+  const filterBar = document.getElementById('performance-filters');
+  const rows = Array.from(document.querySelectorAll('.performance-filter-row'));
+  if (!filterBar || !rows.length) {
+    return;
+  }
+
+  const controls = {
+    employee: document.getElementById('filter-employee'),
+    department: document.getElementById('filter-department'),
+    attendance: document.getElementById('filter-attendance'),
+    task: document.getElementById('filter-task'),
+    productivity: document.getElementById('filter-productivity'),
+    search: document.getElementById('performance-search'),
+  };
+
+  function matches(row, key, value) {
+    if (!value) return true;
+    return String(row.dataset[key] || '').toLowerCase() === String(value).toLowerCase();
+  }
+
+  function applyFilters() {
+    const search = String(controls.search?.value || '').trim().toLowerCase();
+    rows.forEach((row) => {
+      const visible =
+        matches(row, 'employee', controls.employee?.value) &&
+        matches(row, 'department', controls.department?.value) &&
+        matches(row, 'attendance', controls.attendance?.value) &&
+        matches(row, 'task', controls.task?.value) &&
+        matches(row, 'productivity', controls.productivity?.value) &&
+        (!search || row.textContent.toLowerCase().includes(search));
+      row.classList.toggle('hidden', !visible);
+    });
+  }
+
+  Object.values(controls).forEach((control) => {
+    if (control) {
+      control.addEventListener('input', applyFilters);
+      control.addEventListener('change', applyFilters);
+    }
+  });
+
+  filterBar.querySelectorAll('[data-quick-filter]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const dateInput = document.getElementById('filter-date');
+      if (dateInput) {
+        dateInput.valueAsDate = new Date();
+      }
+      showToast(`${button.textContent.trim()} filter applied.`, 'info');
+      applyFilters();
+    });
+  });
+
+  document.querySelectorAll('[data-export-table]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const table = document.getElementById(button.dataset.exportTable);
+      if (!table) return;
+
+      const csv = Array.from(table.querySelectorAll('tr:not(.hidden)')).map((row) => (
+        Array.from(row.cells).map((cell) => {
+          const value = cell.textContent.replace(/\s+/g, ' ').trim().replace(/"/g, '""');
+          return `"${value}"`;
+        }).join(',')
+      )).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = button.dataset.exportName || 'employee-performance.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showToast('CSV export generated.', 'success');
+    });
+  });
+}
+
 function enhanceUiInteractions() {
   enhanceRevealAnimations();
   enhanceMetricCounters();
   enhanceButtonRipples();
   enhanceTableSearch();
+  initPerformanceDashboard();
 }
 
 enhanceUiInteractions();

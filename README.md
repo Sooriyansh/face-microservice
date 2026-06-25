@@ -13,6 +13,17 @@ Yeh project `OpenCV + TensorFlow + Node.js + MongoDB` use karke automatic face r
 - Browser live camera access with real-time scan requests to Python recognizer
 - Windows system event timeline from 8:00 AM to 5:00 PM with MongoDB storage
 
+## Enterprise microservices redesign
+
+Professional microservices architecture docs and deployment scaffolding are available here:
+
+- `docs/microservices-architecture.md` - DDD/Clean Architecture service boundaries, APIs, events, security, observability, and migration plan
+- `docs/microservices-contracts.md` - REST and event contract examples
+- `docs/service-catalog.md` - service runtime, port, dependency, and health endpoint catalog
+- `infra/docker-compose.microservices.yml` - local microservices infrastructure and service topology starter
+- `infra/k8s/base/` - Kubernetes-ready base manifests
+- `services-template/` - reusable Node.js and Python service Docker templates
+
 ## Setup
 
 ### 1. Node backend

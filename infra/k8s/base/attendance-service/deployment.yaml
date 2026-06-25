@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: attendance-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: attendance-service
+  template:
+    metadata:
+      labels:
+        app: attendance-service
+    spec:
+      containers:
+        - name: attendance-service
+          image: face-attendance/attendance-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: PORT
+              value: "8083"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: attendance-service-secrets
+                  key: mongo-uri
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8083
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: attendance-service
+spec:
+  selector:
+    app: attendance-service
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083

@@ -1,0 +1,316 @@
+name: face-attendance-microservices
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+
+  auth-db:
+    image: mongo:7
+    ports:
+      - "27018:27017"
+    volumes:
+      - auth-db:/data/db
+
+  student-db:
+    image: mongo:7
+    ports:
+      - "27019:27017"
+    volumes:
+      - student-db:/data/db
+
+  attendance-db:
+    image: mongo:7
+    ports:
+      - "27020:27017"
+    volumes:
+      - attendance-db:/data/db
+
+  face-db:
+    image: mongo:7
+    ports:
+      - "27021:27017"
+    volumes:
+      - face-db:/data/db
+
+  timeline-db:
+    image: mongo:7
+    ports:
+      - "27022:27017"
+    volumes:
+      - timeline-db:/data/db
+
+  notification-db:
+    image: mongo:7
+    ports:
+      - "27023:27017"
+    volumes:
+      - notification-db:/data/db
+
+  audit-db:
+    image: mongo:7
+    ports:
+      - "27024:27017"
+    volumes:
+      - audit-db:/data/db
+
+  analytics-db:
+    image: mongo:7
+    ports:
+      - "27025:27017"
+    volumes:
+      - analytics-db:/data/db
+
+  reporting-db:
+    image: mongo:7
+    ports:
+      - "27026:27017"
+    volumes:
+      - reporting-db:/data/db
+
+  api-gateway:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8080:8080"
+    environment:
+      SERVICE_NAME: api-gateway
+      PORT: 8080
+      REDIS_URL: redis://redis:6379
+      AUTH_SERVICE_URL: http://auth-service:8081
+    depends_on:
+      - redis
+      - auth-service
+
+  auth-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8081:8081"
+    environment:
+      SERVICE_NAME: auth-service
+      PORT: 8081
+      MONGO_URI: mongodb://auth-db:27017/auth
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - auth-db
+      - rabbitmq
+
+  student-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8082:8082"
+    environment:
+      SERVICE_NAME: student-service
+      PORT: 8082
+      MONGO_URI: mongodb://student-db:27017/students
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - student-db
+      - rabbitmq
+
+  attendance-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVICE_NAME: attendance-service
+      PORT: 8083
+      MONGO_URI: mongodb://attendance-db:27017/attendance
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - attendance-db
+      - rabbitmq
+
+  notification-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8084:8084"
+    environment:
+      SERVICE_NAME: notification-service
+      PORT: 8084
+      MONGO_URI: mongodb://notification-db:27017/notifications
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - notification-db
+      - rabbitmq
+
+  activity-timeline-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8085:8085"
+    environment:
+      SERVICE_NAME: activity-timeline-service
+      PORT: 8085
+      MONGO_URI: mongodb://timeline-db:27017/timeline
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - timeline-db
+      - rabbitmq
+
+  reporting-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8086:8086"
+    environment:
+      SERVICE_NAME: reporting-service
+      PORT: 8086
+      MONGO_URI: mongodb://reporting-db:27017/reporting
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+      S3_ENDPOINT: http://minio:9000
+    depends_on:
+      - reporting-db
+      - rabbitmq
+      - minio
+
+  audit-log-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8087:8087"
+    environment:
+      SERVICE_NAME: audit-log-service
+      PORT: 8087
+      MONGO_URI: mongodb://audit-db:27017/audit
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - audit-db
+      - rabbitmq
+
+  analytics-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8088:8088"
+    environment:
+      SERVICE_NAME: analytics-service
+      PORT: 8088
+      MONGO_URI: mongodb://analytics-db:27017/analytics
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - analytics-db
+      - rabbitmq
+
+  file-storage-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "8089:8089"
+    environment:
+      SERVICE_NAME: file-storage-service
+      PORT: 8089
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: face-attendance
+    depends_on:
+      - minio
+
+  face-capture-service:
+    build:
+      context: ../services-template/python-service
+    ports:
+      - "8091:8091"
+    environment:
+      SERVICE_NAME: face-capture-service
+      PORT: 8091
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+      S3_ENDPOINT: http://minio:9000
+    depends_on:
+      - rabbitmq
+      - minio
+
+  face-training-service:
+    build:
+      context: ../services-template/python-service
+    ports:
+      - "8092:8092"
+    environment:
+      SERVICE_NAME: face-training-service
+      PORT: 8092
+      MONGO_URI: mongodb://face-db:27017/face
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+      S3_ENDPOINT: http://minio:9000
+    depends_on:
+      - face-db
+      - rabbitmq
+      - minio
+
+  face-recognition-service:
+    build:
+      context: ../services-template/python-service
+    ports:
+      - "8093:8093"
+    environment:
+      SERVICE_NAME: face-recognition-service
+      PORT: 8093
+      MONGO_URI: mongodb://face-db:27017/face
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+      S3_ENDPOINT: http://minio:9000
+    depends_on:
+      - face-db
+      - rabbitmq
+      - minio
+
+  system-event-monitoring-service:
+    build:
+      context: ../services-template/python-service
+    ports:
+      - "8094:8094"
+    environment:
+      SERVICE_NAME: system-event-monitoring-service
+      PORT: 8094
+      MONGO_URI: mongodb://timeline-db:27017/system-events
+      BROKER_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - timeline-db
+      - rabbitmq
+
+  dashboard-service:
+    build:
+      context: ../services-template/node-service
+    ports:
+      - "3000:3000"
+    environment:
+      SERVICE_NAME: dashboard-service
+      PORT: 3000
+      API_GATEWAY_URL: http://api-gateway:8080
+    depends_on:
+      - api-gateway
+
+volumes:
+  auth-db:
+  student-db:
+  attendance-db:
+  face-db:
+  timeline-db:
+  notification-db:
+  audit-db:
+  analytics-db:
+  reporting-db:
+  minio-data:

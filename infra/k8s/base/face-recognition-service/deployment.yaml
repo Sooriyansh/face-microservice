@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: face-recognition-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: face-recognition-service
+  template:
+    metadata:
+      labels:
+        app: face-recognition-service
+    spec:
+      containers:
+        - name: face-recognition-service
+          image: face-attendance/face-recognition-service:latest
+          ports:
+            - containerPort: 8093
+          env:
+            - name: PORT
+              value: "8093"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: face-recognition-service-secrets
+                  key: mongo-uri
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8093
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8093
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: face-recognition-service
+spec:
+  selector:
+    app: face-recognition-service
+  ports:
+    - name: http
+      port: 8093
+      targetPort: 8093

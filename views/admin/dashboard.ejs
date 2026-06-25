@@ -3,41 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | FaceAI Attend</title>
+  <title>Employee Performance Overview | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body data-role="admin">
-  <% const safeStudents = typeof students !== 'undefined' ? students : []; %>
-  <% const safeRecentAttendance = typeof recentAttendance !== 'undefined' ? recentAttendance : []; %>
-  <% const presentToday = typeof todayAttendanceCount !== 'undefined' ? todayAttendanceCount : safeRecentAttendance.length; %>
-  <% const totalEmployees = typeof studentCount !== 'undefined' ? studentCount : safeStudents.length; %>
-  <% const safeLiveSessions = typeof liveSessions !== 'undefined' ? liveSessions : []; %>
-  <% const sessionFor = (employeeId) => safeLiveSessions.find((session) => String(session.employee && session.employee._id ? session.employee._id : session.employee) === String(employeeId)); %>
-  <% const activeEmployees = Math.max(Math.min(totalEmployees, Math.round(totalEmployees * 0.72)), presentToday); %>
-  <% const absentToday = Math.max(totalEmployees - presentToday, 0); %>
+  <%
+    const safeStudents = typeof students !== 'undefined' ? students : [];
+    const safeLiveSessions = typeof liveSessions !== 'undefined' ? liveSessions : [];
+    const overview = typeof performanceOverview !== 'undefined' ? performanceOverview : {};
+    const topCards = overview.topCards || [];
+    const taskRows = overview.taskRows || [];
+    const latestReports = overview.latestReports || [];
+    const attendance = overview.attendance || {};
+    const monthly = overview.monthly || {};
+    const yearly = overview.yearly || {};
+    const departments = [...new Set(safeStudents.map((student) => student.department || 'Unassigned'))].sort();
+    const fmtTime = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+    const statusTone = (status) => {
+      if (status === 'Completed' || status === 'Excellent' || status === 'Present') return 'success';
+      if (status === 'In Progress' || status === 'Good') return 'info';
+      if (status === 'Pending' || status === 'Average' || status === 'On Leave' || status === 'Partially Completed') return 'warning';
+      return 'danger';
+    };
+  %>
 
-  <div class="enterprise-layout">
+  <div class="enterprise-layout performance-dashboard">
     <aside class="side-nav">
       <a href="/" class="brand-block">
-        <span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span>
-        <span><strong>FaceAI</strong><small>RBAC Console</small></span>
+        <span class="brand-mark"><i class="fa-solid fa-chart-line"></i></span>
+        <span><strong>FaceAI</strong><small>Performance Console</small></span>
       </a>
       <nav class="side-menu">
-        <a class="active" href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a class="active" href="/"><i class="fa-solid fa-gauge-high"></i>Dashboard</a>
         <a href="/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
         <a href="/leave-requests"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
         <a href="/daily-reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a>
         <a href="/overtime-dashboard"><i class="fa-solid fa-business-time"></i>Overtime</a>
-        <a href="#employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
+        <a href="#notification-test"><i class="fa-solid fa-bell"></i>Notifications</a>
         <a href="/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
-        <a href="#live-monitoring"><i class="fa-solid fa-satellite-dish"></i>Monitoring</a>
-        <a href="#settings"><i class="fa-solid fa-sliders"></i>Settings</a>
+        <a href="#performance-table"><i class="fa-solid fa-table-list"></i>Performance Table</a>
       </nav>
       <div class="rbac-card">
         <span class="security-badge">Admin role</span>
-        <p>Full monitoring access. Employee camera attendance lives in the employee workspace.</p>
+        <p>Single-screen insight into attendance, task progress, daily reports, leave, overtime, and productivity.</p>
         <form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form>
       </div>
     </aside>
@@ -45,60 +55,78 @@
     <main class="workspace">
       <header class="topbar">
         <button class="mobile-menu-toggle" type="button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
-        <label class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search employees, events, reports"></label>
+        <label class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="performance-search" type="search" placeholder="Search employees, departments, reports"></label>
         <div class="topbar-actions">
-          <span class="sync-pill"><span class="live-dot"></span>Live sync</span>
+          <span class="sync-pill"><span class="live-dot"></span>Live analytics</span>
           <span class="clock" id="real-time-clock">--:--</span>
           <button class="icon-button theme-toggle" type="button" aria-label="Toggle theme"><i class="fa-solid fa-moon"></i></button>
           <button class="icon-button notification-trigger" id="notification-button" type="button" aria-label="Notifications"><i class="fa-solid fa-bell"></i><span class="notification-count" id="notification-count" hidden>0</span></button>
           <div class="profile-menu">
             <button class="profile-trigger" type="button"><span class="avatar"><%= currentUser ? currentUser.name.slice(0,2).toUpperCase() : 'AD' %></span><span class="profile-meta"><%= currentUser ? currentUser.name : 'Admin' %></span><i class="fa-solid fa-chevron-down"></i></button>
             <div class="profile-dropdown">
-              <a href="/system-events">Security timeline</a>
-              <a href="/employee">Employee workspace</a>
-              <a href="#settings">Access policy</a>
+              <a href="/daily-reports">Daily reports</a>
+              <a href="/overtime-dashboard">Overtime dashboard</a>
               <form action="/logout" method="POST"><button type="submit">Logout</button></form>
             </div>
           </div>
         </div>
       </header>
 
-      <section class="hero-panel reveal">
+      <section class="hero-panel reveal performance-hero">
         <div>
-          <span class="status-chip"><span class="live-dot"></span> Enterprise security dashboard</span>
-          <h1>Attendance Management + Real-Time Employee Activity Tracking</h1>
-          <p>Monitor attendance, laptop activity, login/logout events, lock/unlock history, live sync health, and employee analytics from one RBAC-protected admin console.</p>
+          <span class="status-chip"><span class="live-dot"></span>Employee Performance Overview</span>
+          <h1>Admin performance dashboard</h1>
+          <p>Attendance, daily tasks, work reports, productivity score, leave status, overtime, monthly analytics, and annual rankings in one organized view.</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="/system-events"><i class="fa-solid fa-satellite-dish"></i> Monitor Events</a>
+            <a class="btn btn-primary" href="#performance-table"><i class="fa-solid fa-ranking-star"></i> Review Employees</a>
+            <button class="btn btn-secondary" type="button" data-export-table="performance-table-data" data-export-name="employee-performance.csv"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
           </div>
         </div>
-        <div class="security-map" aria-label="Live monitoring visualization">
-          <div class="radar-ring"></div>
-          <div class="radar-core"><i class="fa-solid fa-fingerprint"></i></div>
-          <span style="--x:18%;--y:22%">ON</span>
-          <span style="--x:72%;--y:28%">Login</span>
-          <span style="--x:36%;--y:76%">Face</span>
-          <span style="--x:78%;--y:70%" class="alert">Lock</span>
+        <div class="performance-orbit">
+          <div class="score-ring" style="--score:<%= monthly.productivityScore || 0 %>"><strong><%= monthly.productivityScore || 0 %>%</strong><span>Monthly Productivity</span></div>
+          <div class="orbit-stat top"><b><%= attendance.monthlyRate || 0 %>%</b><small>Monthly Attendance</small></div>
+          <div class="orbit-stat right"><b><%= monthly.completedTasks || 0 %></b><small>Completed Tasks</small></div>
+          <div class="orbit-stat bottom"><b><%= monthly.overtimeHours || 0 %>h</b><small>Overtime</small></div>
         </div>
       </section>
 
-      <section class="metric-grid reveal">
-        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-users"></i></span><p>Total Employees</p><strong><%= totalEmployees %></strong></div>
-        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-calendar-day"></i></span><p>Present Today</p><strong><%= presentToday %></strong></div>
-        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-user-check"></i></span><p>Active Employees</p><strong id="dashboard-active-count"><%= activeEmployees %></strong></div>
-        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-hourglass-half"></i></span><p>Idle Employees</p><strong id="dashboard-idle-count">0</strong></div>
-        <div class="metric-card"><span class="metric-icon danger"><i class="fa-solid fa-user-xmark"></i></span><p>Offline Employees</p><strong id="dashboard-offline-count"><%= absentToday %></strong></div>
-        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-circle-check"></i></span><p>Checked-Out Employees</p><strong id="dashboard-checkout-count">0</strong></div>
-        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-fingerprint"></i></span><p>Security Accuracy %</p><strong>99.7%</strong></div>
-        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-bolt"></i></span><p>Live Sessions</p><strong><%= safeLiveSessions.length %></strong></div>
+      <section class="performance-filter-bar reveal" id="performance-filters">
+        <label><span>Date</span><input type="date" id="filter-date"></label>
+        <label><span>Employee</span><select id="filter-employee"><option value="">All employees</option><% taskRows.forEach((row) => { %><option value="<%= row.name %>"><%= row.name %></option><% }) %></select></label>
+        <label><span>Department</span><select id="filter-department"><option value="">All departments</option><% departments.forEach((department) => { %><option value="<%= department %>"><%= department %></option><% }) %></select></label>
+        <label><span>Attendance</span><select id="filter-attendance"><option value="">Any status</option><option>Present</option><option>Absent</option><option>On Leave</option></select></label>
+        <label><span>Task</span><select id="filter-task"><option value="">Any task status</option><option>Completed</option><option>Partially Completed</option><option>Pending</option><option>Not Started</option></select></label>
+        <label><span>Productivity</span><select id="filter-productivity"><option value="">Any level</option><option>Excellent</option><option>Good</option><option>Average</option><option>Needs Improvement</option></select></label>
+        <div class="quick-filter-group" aria-label="Quick filters">
+          <button type="button" data-quick-filter="today">Today</button>
+          <button type="button" data-quick-filter="week">This Week</button>
+          <button type="button" data-quick-filter="month">This Month</button>
+          <button type="button" data-quick-filter="year">This Year</button>
+        </div>
+      </section>
+
+      <section class="metric-grid performance-summary-grid reveal">
+        <% topCards.forEach((card) => { %>
+          <article class="metric-card analytics-card">
+            <div class="analytics-card-top">
+              <span class="metric-icon <%= card.tone %>"><i class="fa-solid <%= card.icon %>"></i></span>
+              <span class="trend-pill trend-<%= card.trend.direction %>"><i class="fa-solid fa-arrow-trend-<%= card.trend.direction === 'down' ? 'down' : 'up' %>"></i><%= Math.abs(card.trend.change) %>%</span>
+            </div>
+            <p><%= card.label %></p>
+            <strong><%= card.value %></strong>
+            <div class="mini-chart" aria-hidden="true">
+              <% card.chart.forEach((value) => { %><span style="--h:<%= value %>%"></span><% }) %>
+            </div>
+          </article>
+        <% }) %>
       </section>
 
       <section class="panel reveal" id="notification-test">
         <div class="panel-header split">
           <div>
-            <p class="eyebrow">Push test</p>
-            <h2>Send Employee Message</h2>
-            <p class="helper-text">Use this to verify in-app realtime and browser push notifications.</p>
+            <p class="eyebrow">Notification System</p>
+            <h2>Send employee message</h2>
+            <p class="helper-text">Admin can send realtime in-app and browser push notifications to selected employees.</p>
           </div>
           <span class="panel-badge">Admin test</span>
         </div>
@@ -115,67 +143,46 @@
             </label>
             <label>
               <span>Title</span>
-              <input type="text" name="title" maxlength="160" value="Admin test message" required>
+              <input type="text" name="title" maxlength="160" value="Admin message" required>
             </label>
           </div>
           <label>
             <span>Message</span>
-            <textarea name="message" rows="3" maxlength="1000" required>Testing notification from admin dashboard.</textarea>
+            <textarea name="message" rows="3" maxlength="1000" required>Message from admin dashboard.</textarea>
           </label>
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send Test</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send Notification</button>
             <span class="form-status" id="admin-employee-message-status">Employee must enable browser notifications for push delivery.</span>
           </div>
         </form>
       </section>
 
-      <section class="panel reveal" id="live-monitoring">
+      <section class="panel reveal">
         <div class="panel-header split">
           <div>
-            <p class="eyebrow">Admin real-time monitoring</p>
-            <h2>Employee Live Status</h2>
-            <p class="helper-text">Green active, yellow idle, red offline, and blue checked out indicators update from the smart work session API.</p>
+            <p class="eyebrow">Today's Employee Task Status</p>
+            <h2>Work completion board</h2>
+            <p class="helper-text">Join time, checkout time, task status, progress, and work summary for every employee.</p>
           </div>
-          <div class="connection-rack">
-            <span><span class="live-dot"></span>Live employee updates</span>
-            <span><span class="live-dot"></span>Daily plans</span>
-            <span><span class="live-dot"></span>Checkout reports</span>
-          </div>
-        </div>
-        <div class="status-summary-strip">
-          <div><span class="status-light status-active"></span><strong id="admin-active-count">0</strong><small>Active employees</small></div>
-          <div><span class="status-light status-idle"></span><strong id="admin-idle-count">0</strong><small>Idle employees</small></div>
-          <div><span class="status-light status-checkout"></span><strong id="admin-checkout-count">0</strong><small>Checked-out employees</small></div>
-          <div><span class="status-light status-offline"></span><strong id="admin-offline-count">0</strong><small>Offline employees</small></div>
+          <button class="btn btn-secondary" type="button" data-export-table="today-task-table" data-export-name="today-task-status.csv"><i class="fa-solid fa-download"></i> Export Tasks</button>
         </div>
         <div class="table-wrap">
-          <table>
+          <table id="today-task-table">
             <thead>
-              <tr>
-                <th>Employee Name</th>
-                <th>Join Time</th>
-                <th>Checkout Time</th>
-                <th>Current Status</th>
-                <th>Daily Plan</th>
-                <th>Task Status</th>
-                <th>Work Summary</th>
-                <th>Pending Tasks</th>
-                <th>Total Work Duration</th>
-              </tr>
+              <tr><th>Employee Name</th><th>Department</th><th>Join Time</th><th>Checkout Time</th><th>Today's Task</th><th>Task Status</th><th>Progress</th><th>Work Summary</th></tr>
             </thead>
-            <tbody id="admin-monitoring-body" data-mode="workday">
-              <% if (safeStudents.length === 0) { %><tr><td colspan="9">No employees registered yet.</td></tr><% } %>
-              <% safeStudents.forEach((student) => { const session = sessionFor(student._id); const status = session ? session.status : 'offline'; %>
-                <tr>
-                  <td><span class="person-cell"><span class="avatar"><%= (student.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= student.name %></strong></span></td>
-                  <td><%= session && session.startedAt ? new Date(session.startedAt).toLocaleTimeString() : '-' %></td>
-                  <td><%= session && session.checkoutAt ? new Date(session.checkoutAt).toLocaleTimeString() : '-' %></td>
-                  <td><span class="status-badge status-<%= status %>"><%= status.replaceAll('_', ' ') %></span></td>
-                  <td><%= session && session.dailyPlan ? session.dailyPlan : '-' %></td>
-                  <td><%= session && session.taskStatus ? session.taskStatus : '-' %></td>
-                  <td><%= session && (session.workSummary || session.checkoutNote) ? (session.workSummary || session.checkoutNote) : '-' %></td>
-                  <td><%= session && session.pendingWork ? session.pendingWork : '-' %></td>
-                  <td>-</td>
+            <tbody>
+              <% if (!taskRows.length) { %><tr><td colspan="8">No employee performance records available yet.</td></tr><% } %>
+              <% taskRows.forEach((row) => { %>
+                <tr class="performance-filter-row" data-employee="<%= row.name %>" data-department="<%= row.department %>" data-attendance="<%= row.status %>" data-task="<%= row.taskStatus %>" data-productivity="<%= row.productivityLevel %>">
+                  <td><span class="person-cell"><span class="avatar"><%= (row.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= row.name %></strong></span></td>
+                  <td><%= row.department %></td>
+                  <td><%= fmtTime(row.joinTime) %></td>
+                  <td><%= fmtTime(row.checkoutTime) %></td>
+                  <td><%= row.todayTask %></td>
+                  <td><span class="status-badge status-<%= statusTone(row.taskStatus) %>"><%= row.taskStatus %></span></td>
+                  <td><div class="progress-track"><span style="width:<%= row.progress %>%"></span><b><%= row.progress %>%</b></div></td>
+                  <td><%= row.workSummary %></td>
                 </tr>
               <% }) %>
             </tbody>
@@ -183,66 +190,160 @@
         </div>
       </section>
 
-      <section class="admin-grid reveal" id="employees">
-        <div class="panel enrollment-panel">
+      <section class="dashboard-grid reveal">
+        <article class="panel">
           <div class="panel-header split">
-            <div>
-              <p class="eyebrow">Enrollment review</p>
-              <h2>Employee Identity Status</h2>
-              <p class="helper-text">Employees register and update their own face data. Admin can only review biometric verification status and reports.</p>
-            </div>
-            <span class="panel-badge">Admin monitor only</span>
+            <div><p class="eyebrow">Daily Work Reports</p><h2>Latest submitted reports</h2></div>
+            <a class="btn btn-secondary" href="/daily-reports"><i class="fa-solid fa-up-right-from-square"></i> View Full Report</a>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Employee</th><th>Face Label</th><th>Samples</th><th>Enrollment Status</th><th>Reviewed</th></tr></thead>
+              <thead><tr><th>Employee</th><th>Date</th><th>Planned Task</th><th>Completed Work</th><th>Pending Work</th><th>Remarks</th></tr></thead>
               <tbody>
-                <% if (safeStudents.length === 0) { %><tr><td colspan="5">No employee identity records found.</td></tr><% } %>
-                <% safeStudents.forEach((student) => { %>
+                <% if (!latestReports.length) { %><tr><td colspan="6">No daily reports submitted yet.</td></tr><% } %>
+                <% latestReports.forEach((report) => { %>
                   <tr>
-                    <td><span class="person-cell"><span class="avatar"><%= (student.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= student.name %></strong></span></td>
-                    <td><code><%= student.faceLabel %></code></td>
-                    <td><%= student.enrollmentImages ? student.enrollmentImages.length : 0 %></td>
-                    <td><span class="status-badge enrollment-<%= String(student.enrollmentStatus || 'Pending').toLowerCase().replaceAll(' ', '-') %>"><%= student.enrollmentStatus || 'Pending' %></span></td>
-                    <td><%= student.enrollmentReviewedAt ? new Date(student.enrollmentReviewedAt).toLocaleDateString() : 'Awaiting review' %></td>
+                    <td><%= report.employee?.name || 'Employee' %></td>
+                    <td><%= report.reportDate %></td>
+                    <td><%= report.dailyPlan || '-' %></td>
+                    <td><%= report.workSummary || '-' %></td>
+                    <td><%= report.pendingTasks || '-' %></td>
+                    <td><%= report.additionalNotes || '-' %></td>
                   </tr>
                 <% }) %>
               </tbody>
             </table>
           </div>
-        </div>
+        </article>
 
-        <aside class="panel live-feed-panel">
+        <aside class="panel">
           <div class="panel-header">
-            <div><p class="eyebrow">WebSocket style</p><h2>Live Activity Feed</h2></div>
+            <div><p class="eyebrow">Attendance Analytics</p><h2>Today to yearly</h2></div>
           </div>
-          <div class="activity-feed realtime-feed">
-            <div class="severity-success"><span class="live-dot"></span><strong>Rahul laptop started</strong><p>08:12 AM · Windows activity monitor</p></div>
-            <div><span class="live-dot"></span><strong>Ankit entered sleep mode</strong><p>08:46 AM · Session continuity</p></div>
-            <div class="severity-success"><span class="live-dot"></span><strong>Priya marked attendance successfully</strong><p>09:02 AM · Face recognition AI</p></div>
-            <div><span class="live-dot"></span><strong>Rohit unlocked screen</strong><p>09:18 AM · Screen security</p></div>
-            <div class="severity-danger"><span class="live-dot danger-dot"></span><strong>Aman logged out</strong><p>09:41 AM · Critical access event</p></div>
+          <div class="analytics-stat-grid">
+            <div><span>Today</span><strong><%= attendance.today || 0 %></strong></div>
+            <div><span>Weekly</span><strong><%= attendance.weekly || 0 %></strong></div>
+            <div><span>Monthly</span><strong><%= attendance.monthly || 0 %></strong></div>
+            <div><span>Yearly</span><strong><%= attendance.yearly || 0 %></strong></div>
+            <div><span>Present Days</span><strong><%= attendance.presentDays || 0 %></strong></div>
+            <div><span>Absent Days</span><strong><%= attendance.absentDays || 0 %></strong></div>
+            <div><span>Leave Days</span><strong><%= attendance.leaveDays || 0 %></strong></div>
+            <div><span>Late Arrivals</span><strong><%= attendance.lateArrivals || 0 %></strong></div>
+            <div><span>Early Checkouts</span><strong><%= attendance.earlyCheckouts || 0 %></strong></div>
           </div>
         </aside>
       </section>
 
-      <section class="panel reveal" id="settings">
+      <section class="dashboard-grid reveal">
+        <article class="panel">
+          <div class="panel-header">
+            <div><p class="eyebrow">Monthly Performance Dashboard</p><h2>Monthly employee comparison</h2></div>
+          </div>
+          <div class="monthly-insight-grid">
+            <div class="score-ring small" style="--score:<%= monthly.productivityScore || 0 %>"><strong><%= monthly.productivityScore || 0 %>%</strong><span>Productivity</span></div>
+            <div class="analytics-stat-grid dense">
+              <div><span>Working Days</span><strong><%= monthly.totalWorkingDays || 0 %></strong></div>
+              <div><span>Attendance</span><strong><%= monthly.totalAttendance || 0 %></strong></div>
+              <div><span>Completed</span><strong><%= monthly.completedTasks || 0 %></strong></div>
+              <div><span>Pending</span><strong><%= monthly.pendingTasks || 0 %></strong></div>
+              <div><span>Leave Taken</span><strong><%= monthly.leaveTaken || 0 %></strong></div>
+              <div><span>Overtime</span><strong><%= monthly.overtimeHours || 0 %>h</strong></div>
+            </div>
+          </div>
+          <div class="comparison-bars">
+            <% (monthly.employeeComparison || []).forEach((item) => { %>
+              <div><span><%= item.label %></span><b style="width:<%= item.value %>%"></b><strong><%= item.value %>%</strong></div>
+            <% }) %>
+          </div>
+        </article>
+
+        <aside class="panel">
+          <div class="panel-header">
+            <div><p class="eyebrow">Annual Analytics</p><h2>Ranking highlights</h2></div>
+          </div>
+          <div class="ranking-list">
+            <div><i class="fa-solid fa-calendar-check"></i><span>Best Attendance</span><strong><%= yearly.ranking?.bestAttendance?.name || '-' %></strong></div>
+            <div><i class="fa-solid fa-chart-simple"></i><span>Most Productive</span><strong><%= yearly.ranking?.mostProductive?.name || '-' %></strong></div>
+            <div><i class="fa-solid fa-shield-heart"></i><span>Most Consistent</span><strong><%= yearly.ranking?.mostConsistent?.name || '-' %></strong></div>
+            <div><i class="fa-solid fa-business-time"></i><span>Highest Overtime</span><strong><%= yearly.ranking?.highestOvertime?.name || '-' %></strong></div>
+          </div>
+          <div class="analytics-stat-grid dense">
+            <div><span>Total Attendance</span><strong><%= yearly.totalAttendance || 0 %></strong></div>
+            <div><span>Completed Tasks</span><strong><%= yearly.totalCompletedTasks || 0 %></strong></div>
+            <div><span>Pending Tasks</span><strong><%= yearly.totalPendingTasks || 0 %></strong></div>
+            <div><span>Leave Days</span><strong><%= yearly.totalLeaveDays || 0 %></strong></div>
+            <div><span>Work Hours</span><strong><%= yearly.totalWorkHours || 0 %>h</strong></div>
+            <div><span>Overtime</span><strong><%= yearly.totalOvertimeHours || 0 %>h</strong></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="panel reveal">
         <div class="panel-header">
-          <div><p class="eyebrow">RBAC policy</p><h2>Registered Employees</h2></div>
-          <span class="panel-badge">Admin can view all</span>
+          <div><p class="eyebrow">Trend Visualizations</p><h2>Attendance and productivity trends</h2></div>
+        </div>
+        <div class="trend-grid">
+          <div class="line-chart" style="--points:<%= (attendance.trend || []).map((item) => item.value).join(',') %>">
+            <% (attendance.trend || []).forEach((item) => { %><span style="--v:<%= item.value %>%"><b><%= item.label %></b></span><% }) %>
+          </div>
+          <div class="donut-grid">
+            <div class="score-ring small" style="--score:<%= attendance.weeklyRate || 0 %>"><strong><%= attendance.weeklyRate || 0 %>%</strong><span>Weekly Attendance</span></div>
+            <div class="score-ring small" style="--score:<%= attendance.monthlyRate || 0 %>"><strong><%= attendance.monthlyRate || 0 %>%</strong><span>Monthly Attendance</span></div>
+            <div class="score-ring small" style="--score:<%= attendance.yearlyRate || 0 %>"><strong><%= attendance.yearlyRate || 0 %>%</strong><span>Yearly Attendance</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel reveal" id="performance-table">
+        <div class="panel-header split">
+          <div>
+            <p class="eyebrow">Employee Performance Table</p>
+            <h2>Enterprise performance ledger</h2>
+          </div>
+          <div class="export-rack">
+            <button class="btn btn-secondary" type="button" data-export-table="performance-table-data" data-export-name="attendance-reports.csv"><i class="fa-solid fa-calendar-check"></i> Attendance CSV</button>
+            <button class="btn btn-secondary" type="button" data-export-table="performance-table-data" data-export-name="productivity-reports.csv"><i class="fa-solid fa-chart-line"></i> Productivity CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="performance-table-data">
+            <thead><tr><th>Employee Name</th><th>Attendance %</th><th>Tasks Completed</th><th>Pending Tasks</th><th>Productivity Score</th><th>Leave Count</th><th>Overtime Hours</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              <% if (!taskRows.length) { %><tr><td colspan="9">No employees registered yet.</td></tr><% } %>
+              <% taskRows.forEach((row) => { %>
+                <tr class="performance-filter-row" data-employee="<%= row.name %>" data-department="<%= row.department %>" data-attendance="<%= row.status %>" data-task="<%= row.taskStatus %>" data-productivity="<%= row.productivityLevel %>">
+                  <td><span class="person-cell"><span class="avatar"><%= (row.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= row.name %></strong></span></td>
+                  <td><%= row.attendanceRate %>%</td>
+                  <td><%= row.completedTasks %></td>
+                  <td><%= row.pendingTasks %></td>
+                  <td><span class="productivity-pill level-<%= row.productivityLevel.toLowerCase().replaceAll(' ', '-') %>"><%= row.productivityScore %>% <%= row.productivityLevel %></span></td>
+                  <td><%= row.leaveCount %></td>
+                  <td><%= row.overtimeHours %>h</td>
+                  <td><span class="status-badge status-<%= statusTone(row.status) %>"><%= row.status %></span></td>
+                  <td class="action-cluster"><a href="#employees">View Profile</a><a href="/daily-reports?employee=<%= row.id %>">View Reports</a><a href="/attendance">View Attendance</a><a href="/system-events">View Activity</a></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel reveal" id="employees">
+        <div class="panel-header">
+          <div><p class="eyebrow">Employee Directory</p><h2>Registered employees</h2></div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Employee</th><th>Face Label</th><th>Department</th><th>Joining</th><th>Access</th></tr></thead>
-            <tbody id="students-table-body">
-              <% if (safeStudents.length === 0) { %><tr><td colspan="5">No employees registered yet.</td></tr><% } %>
-              <% safeStudents.forEach((student) => { %>
+            <thead><tr><th>Employee</th><th>Face Label</th><th>Department</th><th>Joining</th><th>Live Session</th></tr></thead>
+            <tbody>
+              <% if (!safeStudents.length) { %><tr><td colspan="5">No employees registered yet.</td></tr><% } %>
+              <% safeStudents.forEach((student) => { const session = safeLiveSessions.find((item) => String(item.employee && item.employee._id ? item.employee._id : item.employee) === String(student._id)); %>
                 <tr>
                   <td><span class="person-cell"><span class="avatar"><%= (student.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= student.name %></strong></span></td>
                   <td><code><%= student.faceLabel %></code></td>
                   <td><%= student.department || '-' %></td>
                   <td><%= student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : '-' %></td>
-                  <td><span class="security-badge">Employee</span></td>
+                  <td><span class="status-badge status-<%= session ? session.status : 'offline' %>"><%= session ? session.status.replaceAll('_', ' ') : 'offline' %></span></td>
                 </tr>
               <% }) %>
             </tbody>
@@ -261,4 +362,3 @@
   <script src="/js/shared/script.js"></script>
 </body>
 </html>
-

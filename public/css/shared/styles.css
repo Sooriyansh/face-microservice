@@ -4296,6 +4296,388 @@ th {
   position: relative;
 }
 
+/* Employee Performance & Productivity Dashboard */
+.performance-dashboard .workspace {
+  max-width: 1560px;
+}
+
+.performance-hero {
+  min-height: 380px;
+}
+
+.performance-orbit {
+  position: relative;
+  min-height: 330px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(rgba(34, 211, 238, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.07) 1px, transparent 1px),
+    rgba(2, 8, 23, 0.28);
+  background-size: 28px 28px;
+}
+
+.score-ring {
+  --score: 0;
+  width: 190px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.25rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(2, 8, 23, 0.96) 57%, transparent 58%),
+    conic-gradient(var(--teal) calc(var(--score) * 1%), rgba(255,255,255,0.08) 0);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  box-shadow: 0 0 34px rgba(34, 211, 238, 0.14);
+}
+
+.score-ring.small {
+  width: 132px;
+}
+
+.score-ring strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.score-ring span,
+.orbit-stat small,
+.analytics-stat-grid span,
+.ranking-list span {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.orbit-stat {
+  position: absolute;
+  min-width: 128px;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+}
+
+.orbit-stat b,
+.orbit-stat small {
+  display: block;
+}
+
+.orbit-stat.top { top: 1rem; left: 1rem; }
+.orbit-stat.right { right: 1rem; top: 42%; }
+.orbit-stat.bottom { bottom: 1rem; left: 1rem; }
+
+.performance-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(130px, 1fr)) auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(18px);
+}
+
+.performance-filter-bar label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.performance-filter-bar input,
+.performance-filter-bar select {
+  min-height: 42px;
+  width: 100%;
+  padding: 0 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: rgba(2, 8, 23, 0.42);
+  outline: none;
+}
+
+.quick-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.quick-filter-group button {
+  min-height: 34px;
+  padding: 0 0.65rem;
+  border-radius: var(--radius);
+  color: var(--cyan);
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(34, 211, 238, 0.1);
+  font-weight: 850;
+}
+
+.performance-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.analytics-card {
+  min-height: 190px;
+}
+
+.analytics-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 30px;
+  padding: 0 0.55rem;
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+  font-weight: 900;
+  border: 1px solid currentColor;
+}
+
+.trend-up { color: var(--success); background: rgba(34, 197, 94, 0.1); }
+.trend-down { color: var(--danger); background: rgba(251, 113, 133, 0.1); }
+.trend-flat { color: var(--text-soft); background: rgba(255, 255, 255, 0.06); }
+
+.mini-chart {
+  height: 42px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: end;
+  gap: 0.3rem;
+}
+
+.mini-chart span {
+  height: var(--h);
+  min-height: 6px;
+  border-radius: 999px 999px 4px 4px;
+  background: linear-gradient(180deg, var(--cyan), var(--teal));
+  opacity: 0.86;
+}
+
+.progress-track {
+  position: relative;
+  min-width: 130px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(125, 211, 252, 0.14);
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--danger), var(--warning), var(--teal));
+}
+
+.progress-track b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-size: 0.76rem;
+}
+
+.analytics-stat-grid,
+.monthly-insight-grid,
+.trend-grid,
+.donut-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.analytics-stat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.analytics-stat-grid.dense {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.analytics-stat-grid > div,
+.ranking-list > div {
+  min-height: 86px;
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.analytics-stat-grid strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.35rem;
+}
+
+.monthly-insight-grid {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.comparison-bars {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.comparison-bars div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(140px, 1.5fr) 54px;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.comparison-bars b {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet), var(--teal));
+}
+
+.ranking-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ranking-list > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.7rem;
+  align-items: center;
+}
+
+.ranking-list i {
+  grid-row: span 2;
+  color: var(--cyan);
+  font-size: 1.15rem;
+}
+
+.ranking-list strong {
+  line-height: 1.2;
+}
+
+.trend-grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+}
+
+.line-chart {
+  min-height: 260px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: end;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(rgba(125, 211, 252, 0.08) 1px, transparent 1px),
+    rgba(2, 8, 23, 0.25);
+  background-size: 100% 25%;
+}
+
+.line-chart span {
+  position: relative;
+  min-height: 30px;
+  height: var(--v);
+  border-radius: 999px 999px 6px 6px;
+  background: linear-gradient(180deg, var(--teal), rgba(34, 211, 238, 0.18));
+}
+
+.line-chart b {
+  position: absolute;
+  left: 50%;
+  bottom: -1.65rem;
+  transform: translateX(-50%);
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
+.donut-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+}
+
+.productivity-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 0.65rem;
+  border-radius: var(--radius);
+  font-weight: 900;
+  border: 1px solid currentColor;
+}
+
+.level-excellent { color: var(--success); background: rgba(34, 197, 94, 0.12); }
+.level-good { color: var(--sky); background: rgba(56, 189, 248, 0.12); }
+.level-average { color: var(--warning); background: rgba(245, 158, 11, 0.12); }
+.level-needs-improvement { color: var(--danger); background: rgba(251, 113, 133, 0.12); }
+
+.action-cluster,
+.export-rack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.action-cluster a {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  border-radius: var(--radius);
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .performance-summary-grid,
+  .performance-filter-bar,
+  .trend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-filter-group {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 820px) {
+  .performance-summary-grid,
+  .performance-filter-bar,
+  .monthly-insight-grid,
+  .trend-grid,
+  .donut-grid,
+  .analytics-stat-grid,
+  .analytics-stat-grid.dense {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-bars div {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-orbit {
+    min-height: 420px;
+  }
+}
+
 .notification-count {
   position: absolute;
   top: -0.35rem;

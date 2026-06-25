@@ -1,0 +1,13 @@
+{
+  "name": "node-service-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/interfaces/http/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
+
