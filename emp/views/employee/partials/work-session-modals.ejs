@@ -1,0 +1,46 @@
+<div class="modal-backdrop" id="join-work-modal" hidden>
+  <form class="checkout-modal panel" id="join-work-form">
+    <div class="panel-header">
+      <div><p class="eyebrow">Start work</p><h2>Today's Work Plan</h2></div>
+      <button class="icon-button" type="button" id="close-join-work-modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <label class="stack-form">
+      <span>What tasks will you work on today?</span>
+      <textarea id="daily-plan-input" name="dailyPlan" rows="7" placeholder="Example:&#10;Complete attendance module&#10;Fix dashboard UI&#10;Test face recognition system" required></textarea>
+    </label>
+    <button type="submit" class="btn btn-primary wide"><i class="fa-solid fa-play"></i> Start Work Session</button>
+    <p class="form-status" id="join-work-form-status"></p>
+  </form>
+</div>
+<div class="modal-backdrop" id="checkout-modal" hidden>
+  <form class="checkout-modal panel" id="checkout-form">
+    <div class="panel-header">
+      <div><p class="eyebrow">Checkout</p><h2>End of Day Report</h2></div>
+      <button class="icon-button" type="button" id="close-checkout-modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <label class="stack-form"><span>Task Status</span><select id="task-status" name="taskStatus" required><option>Completed</option><option>Partially Completed</option><option>Pending</option></select></label>
+    <label class="stack-form"><span>What work did you complete today?</span><textarea id="checkout-note" name="workSummary" rows="4" placeholder="What work did you complete today?" required></textarea></label>
+    <div id="completed-task-list" class="dynamic-task-list" hidden><label><input type="text" name="completedTasks" value="Work summary submitted"></label></div>
+    <label class="stack-form"><span>What work is still pending?</span><textarea id="pending-tasks" name="pendingTasks" rows="3" placeholder="List any pending work for tomorrow or another team member." required></textarea></label>
+    <label class="stack-form"><span>Additional Notes</span><textarea id="additional-notes" name="additionalNotes" rows="2"></textarea></label>
+    <button type="submit" class="btn btn-primary wide"><i class="fa-solid fa-flag-checkered"></i> Finish Work Session</button>
+    <p class="form-status" id="checkout-form-status"></p>
+  </form>
+</div>
+<div class="modal-backdrop" id="monitoring-permission-modal" hidden>
+  <div class="checkout-modal panel">
+    <div class="panel-header"><div><p class="eyebrow">Monitoring permission</p><h2>Work Session Consent</h2></div></div>
+    <p class="helper-text">This organization wants permission to monitor your device activity during work sessions for productivity and attendance purposes.</p>
+    <div class="permission-list">
+      <span><i class="fa-solid fa-check"></i> System event monitoring</span>
+      <span><i class="fa-solid fa-check"></i> Sleep/wakeup tracking</span>
+      <span><i class="fa-solid fa-check"></i> Device activity monitoring</span>
+      <span><i class="fa-solid fa-check"></i> Lock/unlock detection</span>
+    </div>
+    <p class="form-status">Attendance still works if you deny monitoring. Admin will see monitoring permission denied.</p>
+    <div class="hero-actions">
+      <button type="button" class="btn btn-primary" id="allow-monitoring"><i class="fa-solid fa-shield-check"></i> Allow Monitoring</button>
+      <button type="button" class="btn btn-secondary" id="deny-monitoring"><i class="fa-solid fa-ban"></i> Deny</button>
+    </div>
+  </div>
+</div>

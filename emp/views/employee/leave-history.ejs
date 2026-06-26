@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave History | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="<%= currentUser ? currentUser.role : 'employee' %>">
+  <div class="enterprise-layout employee-layout">
+    <%- include('partials/sidebar', { activePage: 'leave-history' }) %>
+    <main class="workspace">
+      <%- include('partials/topbar', { syncLabel: 'Leave history' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Leave history</span><h1>Leave History</h1><p>Review leave approvals, rejections, admin remarks, and pending requests.</p></div></section>
+      <section class="panel reveal" id="leave-management">
+        <div class="panel-header"><div><p class="eyebrow">Leave history</p><h2>Approval Timeline</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Applied Date</th><th>Leave Type</th><th>Duration</th><th>Status</th><th>Admin Remarks</th><th>Action</th></tr></thead><tbody id="employee-leave-history"><tr><td colspan="6">Loading leave history...</td></tr></tbody></table></div>
+      </section>
+    </main>
+  </div>
+  <%- include('partials/scripts') %>
+</body>
+</html>

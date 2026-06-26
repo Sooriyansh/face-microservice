@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Identity Enrollment | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="<%= currentUser ? currentUser.role : 'employee' %>">
+  <% const safeEmployee = typeof employee !== 'undefined' && employee ? employee : null; %>
+  <% const safeUser = typeof currentUser !== 'undefined' ? currentUser : null; %>
+  <div class="enterprise-layout employee-layout">
+    <%- include('partials/sidebar', { activePage: 'enrollment' }) %>
+    <main class="workspace">
+      <%- include('partials/topbar', { syncLabel: 'Identity enrollment' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Biometric profile</span><h1>Identity Enrollment</h1><p>Register or update your face data with multi-angle scans, quality checks, and secure biometric upload.</p></div></section>
+      <section class="panel enrollment-panel reveal" id="identity-enrollment">
+        <div class="panel-header split"><div><p class="eyebrow">Employee biometric enrollment</p><h2>Identity Enrollment</h2><p class="helper-text">Register or update your own face data with multi-angle scans, alignment guidance, quality checks, and secure biometric upload.</p></div><span class="status-badge enrollment-<%= String(safeEmployee && safeEmployee.enrollmentStatus ? safeEmployee.enrollmentStatus : 'Pending').toLowerCase().replaceAll(' ', '-') %>"><%= safeEmployee && safeEmployee.enrollmentStatus ? safeEmployee.enrollmentStatus : 'Pending' %></span></div>
+        <form id="student-form" class="stack-form biometric-enrollment-form" data-student-id="<%= safeEmployee ? safeEmployee._id : '' %>">
+          <div class="form-grid">
+            <label><span>Name</span><input type="text" name="name" value="<%= safeEmployee ? safeEmployee.name : (safeUser ? safeUser.name : '') %>" placeholder="Rahul Sharma" required></label>
+            <label><span>Face Label</span><input type="text" name="faceLabel" value="<%= safeEmployee ? safeEmployee.faceLabel : (safeUser ? safeUser.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_') : '') %>" placeholder="rahul_sharma" <%= safeEmployee ? 'readonly' : '' %> required></label>
+            <label><span>Joining Date</span><input type="date" name="joiningDate" value="<%= safeEmployee && safeEmployee.joiningDate ? new Date(safeEmployee.joiningDate).toISOString().slice(0,10) : '' %>" required></label>
+            <label><span>Employee ID</span><input type="text" name="rollNumber" value="<%= safeEmployee ? safeEmployee.rollNumber : '' %>" placeholder="EMP-1042"></label>
+            <label><span>Department</span><input type="text" name="department" value="<%= safeEmployee ? safeEmployee.department : '' %>" placeholder="Engineering"></label>
+            <label><span>Email</span><input type="email" name="email" value="<%= safeEmployee ? safeEmployee.email : (safeUser ? safeUser.email : '') %>" placeholder="rahul@company.com"></label>
+          </div>
+          <div class="camera-shell enrollment-shell biometric-scanner-shell">
+            <div class="camera-frame scanner-frame biometric-camera"><video id="enrollment-camera-feed" autoplay playsinline muted></video><canvas id="enrollment-camera-canvas" hidden></canvas><span class="camera-reticle"></span><span class="scan-line camera-scan"></span><div class="face-guide"><span></span><span></span><span></span><span></span></div></div>
+            <div class="quality-grid"><div><strong id="face-quality">Quality 0%</strong><span>Capture quality indicator</span></div><div><strong id="lighting-quality">Lighting pending</strong><span>Lighting detection</span></div><div><strong id="face-validation">Face validation pending</strong><span>AI face detection</span></div><div><strong id="alignment-status">Align face</strong><span>Face alignment guide</span></div></div>
+            <div class="camera-controls"><button type="button" id="start-enrollment-camera" class="btn btn-secondary"><i class="fa-solid fa-video"></i> Start Camera</button><button type="button" id="capture-enrollment" class="btn btn-primary"><i class="fa-solid fa-crosshairs"></i> Multi-Angle Scan</button><button type="button" id="stop-enrollment-camera" class="btn btn-secondary"><i class="fa-solid fa-video-slash"></i> Stop</button></div>
+            <p id="enrollment-camera-status" class="helper-text">Camera is off. Capture at least 6 face samples.</p>
+            <p id="enrollment-sample-status" class="form-status">Minimum: 6 samples | Recommended: 12 samples</p>
+          </div>
+          <div id="enrollment-preview" class="sample-grid"></div>
+          <button type="submit" class="btn btn-primary wide"><i class="fa-solid fa-cloud-arrow-up"></i> <%= safeEmployee ? 'Update Face Data' : 'Register Face' %></button>
+          <p id="student-form-status" class="form-status"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+  <%- include('partials/scripts') %>
+</body>
+</html>

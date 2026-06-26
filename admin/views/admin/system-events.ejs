@@ -14,12 +14,12 @@
   <% const safeRange = typeof systemEventRange !== 'undefined' ? systemEventRange : null; %>
   <div class="enterprise-layout">
     <aside class="side-nav">
-      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Security Timeline</small></span></a>
+      <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Security Timeline</small></span></a>
       <nav class="side-menu">
-        <a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
-        <a href="/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
-        <a href="/#employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
-        <a class="active" href="/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
+        <a href="/admin/employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
+        <a class="active" href="/admin/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
       </nav>
       <div class="rbac-card"><span class="security-badge">Admin role</span><p>Filter any registered employee and inspect complete laptop, login, lock, attendance, and live activity history.</p></div>
       <form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employees | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="admin">
+  <% const safeStudents = typeof students !== 'undefined' ? students : []; const safeLiveSessions = typeof liveSessions !== 'undefined' ? liveSessions : []; %>
+  <div class="enterprise-layout">
+    <%- include('partials/admin-sidebar', { activePage: 'employees' }) %>
+    <main class="workspace">
+      <%- include('partials/admin-topbar', { searchId: 'employee-search', searchPlaceholder: 'Search employees', syncLabel: 'Employee directory' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee Directory</span><h1>Employees</h1><p>Registered employee profiles, face labels, departments, joining dates, and current live session status.</p></div></section>
+      <section class="metric-grid compact reveal">
+        <div class="metric-card"><span class="metric-icon info"><i class="fa-solid fa-users"></i></span><p>Total Employees</p><strong><%= safeStudents.length %></strong></div>
+        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-bolt"></i></span><p>Live Sessions</p><strong><%= safeLiveSessions.length %></strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-building"></i></span><p>Departments</p><strong><%= new Set(safeStudents.map((student) => student.department || 'Unassigned')).size %></strong></div>
+      </section>
+      <section class="panel reveal">
+        <div class="panel-header"><div><p class="eyebrow">Employee Directory</p><h2>Registered employees</h2></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee</th><th>Face Label</th><th>Department</th><th>Joining</th><th>Live Session</th><th>Actions</th></tr></thead>
+            <tbody id="students-table-body">
+              <% if (!safeStudents.length) { %><tr><td colspan="6">No employees registered yet.</td></tr><% } %>
+              <% safeStudents.forEach((student) => { const session = safeLiveSessions.find((item) => String(item.employee && item.employee._id ? item.employee._id : item.employee) === String(student._id)); %>
+                <tr>
+                  <td><span class="person-cell"><span class="avatar"><%= (student.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= student.name %></strong></span></td>
+                  <td><code><%= student.faceLabel %></code></td>
+                  <td><%= student.department || '-' %></td>
+                  <td><%= student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : '-' %></td>
+                  <td><span class="status-badge status-<%= session ? session.status : 'offline' %>"><%= session ? session.status.replaceAll('_', ' ') : 'offline' %></span></td>
+                  <td class="action-cluster"><a href="/admin/reports?employee=<%= student._id %>">Reports</a><a href="/admin/attendance">Attendance</a><a href="/admin/system-events">Activity</a></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast-stack" id="toast-stack"></div>
+  <%- include('../../../views/shared/notification-center') %>
+  <script>window.firebaseWebConfig = <%- JSON.stringify(firebaseConfig || {}) %>;</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>

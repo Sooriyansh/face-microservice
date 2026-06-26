@@ -1934,8 +1934,6 @@ let employeeLeaveStatusSnapshot = new Map();
 
 function renderEmployeeLeaves(leaves = [], balance = {}) {
   const body = document.getElementById('employee-leave-history');
-  if (!body) return;
-
   setText('leave-remaining', String(balance.remaining ?? '--'));
   setText('leave-balance-pill', `Balance ${balance.remaining ?? 0}/${balance.total ?? 24}`);
   const detail = document.getElementById('leave-balance-details');
@@ -1945,6 +1943,8 @@ function renderEmployeeLeaves(leaves = [], balance = {}) {
       <div><span class="event-dot"></span><strong>${leaves.filter((leave) => leave.status === 'Pending').length} pending</strong><p>Pending requests can be cancelled from history.</p></div>
     `;
   }
+
+  if (!body) return;
 
   body.innerHTML = '';
   if (!leaves.length) {
@@ -2379,6 +2379,7 @@ async function startEmployeeFaceLogin() {
     return;
   }
 
+  setEmployeeFaceLoginLoading(true);
   try {
     employeeLoginStream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -2398,6 +2399,8 @@ async function startEmployeeFaceLogin() {
   } catch (error) {
     employeeLoginStream = null;
     setEmployeeFaceLoginStatus(`Camera could not be opened: ${error.message}`, true);
+  } finally {
+    setEmployeeFaceLoginLoading(false);
   }
 }
 
@@ -2412,6 +2415,64 @@ function stopEmployeeFaceLogin() {
     employeeLoginStream = null;
   }
 }
+
+function setEmployeeFaceLoginLoading(isLoading) {
+  const faceTab = document.querySelector('[data-auth-tab="face"]');
+  const startButton = document.getElementById('start-employee-face-login');
+
+  if (faceTab) {
+    faceTab.classList.toggle('is-loading', isLoading);
+    faceTab.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+  }
+
+  if (startButton) {
+    startButton.disabled = isLoading;
+    startButton.innerHTML = isLoading
+      ? '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening Camera'
+      : '<i class="fa-solid fa-fingerprint"></i> Start Face Scan';
+  }
+}
+
+function activateEmployeeAuthTab(tabName, options = {}) {
+  const tabs = document.querySelectorAll('[data-auth-tab]');
+  const panels = document.querySelectorAll('[data-auth-panel]');
+
+  if (!tabs.length || !panels.length) {
+    return;
+  }
+
+  tabs.forEach((tab) => {
+    const isActive = tab.dataset.authTab === tabName;
+    tab.classList.toggle('is-active', isActive);
+    tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    tab.tabIndex = isActive ? 0 : -1;
+  });
+
+  panels.forEach((panel) => {
+    const isActive = panel.dataset.authPanel === tabName;
+    panel.hidden = !isActive;
+    panel.classList.toggle('is-active', isActive);
+  });
+
+  if (tabName === 'face') {
+    setEmployeeFaceLoginStatus('Opening secure camera. Center your face when the preview appears.');
+    if (options.startFace !== false) {
+      startEmployeeFaceLogin();
+    }
+    return;
+  }
+
+  stopEmployeeFaceLogin();
+  setEmployeeLoginConfidence(0);
+  updateText('employee-login-state', 'Liveness Ready');
+  setScannerState('employee-login-scanner-state', 'Camera Ready');
+}
+
+document.querySelectorAll('[data-auth-tab]').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    activateEmployeeAuthTab(tab.dataset.authTab);
+  });
+});
 
 const startEmployeeFaceLoginButton = document.getElementById('start-employee-face-login');
 if (startEmployeeFaceLoginButton) {
@@ -2433,8 +2494,7 @@ if (retryEmployeeFaceLoginButton) {
 const credentialStartFaceLoginButton = document.getElementById('credential-start-face-login');
 if (credentialStartFaceLoginButton) {
   credentialStartFaceLoginButton.addEventListener('click', () => {
-    document.querySelector('.employee-face-login')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    startEmployeeFaceLogin();
+    activateEmployeeAuthTab('face');
   });
 }
 

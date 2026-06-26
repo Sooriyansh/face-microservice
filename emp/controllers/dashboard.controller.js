@@ -3,8 +3,7 @@ const Student = require('../../models/Student');
 const SystemEvent = require('../../models/SystemEvent');
 const WorkSession = require('../../models/WorkSession');
 
-async function dashboard(req, res, next) {
-  try {
+async function getEmployeePageData(req) {
     const employeeQuery = req.user.role === 'employee' ? { email: req.user.email } : {};
     const employee = await Student.findOne(employeeQuery).sort({ createdAt: -1 }).lean();
     const attendanceQuery = employee ? { student: employee._id } : {};
@@ -22,15 +21,36 @@ async function dashboard(req, res, next) {
         : null,
     ]);
 
-    res.render('employee/dashboard', {
-      employee,
-      records,
-      personalEvents,
-      workSession,
-    });
+    return { employee, records, personalEvents, workSession };
+}
+
+function renderEmployeePage(view) {
+  return async function employeePage(req, res, next) {
+    try {
+      res.render(`employee/${view}`, await getEmployeePageData(req));
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+async function dashboard(req, res, next) {
+  try {
+    res.render('employee/dashboard', await getEmployeePageData(req));
   } catch (error) {
     next(error);
   }
 }
 
-module.exports = { dashboard };
+module.exports = {
+  attendancePage: renderEmployeePage('attendance'),
+  attendanceHistoryPage: renderEmployeePage('attendance-history'),
+  activityPage: renderEmployeePage('activity'),
+  dashboard,
+  devicePage: renderEmployeePage('device'),
+  enrollmentPage: renderEmployeePage('enrollment'),
+  leaveHistoryPage: renderEmployeePage('leave-history'),
+  leavePage: renderEmployeePage('leave'),
+  overtimePage: renderEmployeePage('overtime'),
+  workSessionPage: renderEmployeePage('work-session'),
+};

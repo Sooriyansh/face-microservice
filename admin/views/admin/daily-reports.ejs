@@ -15,12 +15,12 @@
   <% const departments = Array.from(new Set(safeStudents.map((student) => student.department).filter(Boolean))); %>
   <div class="enterprise-layout">
     <aside class="side-nav">
-      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Reports Console</small></span></a>
+      <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Reports Console</small></span></a>
       <nav class="side-menu">
-        <a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
-        <a href="/leave-requests"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
-        <a class="active" href="/daily-reports"><i class="fa-solid fa-clipboard-list"></i>Employee Daily Reports</a>
-        <a href="/overtime-dashboard"><i class="fa-solid fa-business-time"></i>Overtime</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/admin/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
+        <a class="active" href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Employee Daily Reports</a>
+        <a href="/admin/overtime"><i class="fa-solid fa-business-time"></i>Overtime</a>
       </nav>
       <div class="rbac-card"><span class="security-badge">Admin role</span><p>Daily plans and checkout reports appear here after employees finish work.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
     </aside>
@@ -36,7 +36,7 @@
       </header>
       <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee checkout reports</span><h1>Employee Daily Reports</h1><p>Review join time, checkout time, daily plans, work summaries, pending work, and task status.</p></div></section>
       <section class="panel reveal">
-        <form class="filter-controls report-filter-bar" method="GET" action="/daily-reports">
+        <form class="filter-controls report-filter-bar" method="GET" action="/admin/reports">
           <label><span>Date</span><input type="date" name="date" value="<%= safeFilters.date || '' %>"></label>
           <label><span>Employee</span><select name="employee"><option value="">All employees</option><% safeStudents.forEach((student) => { %><option value="<%= student._id %>" <%= String(safeFilters.employee) === String(student._id) ? 'selected' : '' %>><%= student.name %></option><% }) %></select></label>
           <label><span>Department</span><select name="department"><option value="">All departments</option><% departments.forEach((department) => { %><option value="<%= department %>" <%= safeFilters.department === department ? 'selected' : '' %>><%= department %></option><% }) %></select></label>

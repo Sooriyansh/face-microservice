@@ -12,8 +12,8 @@
   <% const safeRows = typeof rows !== 'undefined' ? rows : []; const fmt = (ms) => { const m = Math.max(Math.round(Number(ms || 0) / 60000), 0); const h = Math.floor(m / 60); return h ? `${h}h ${m % 60}m` : `${m}m`; }; %>
   <div class="enterprise-layout">
     <aside class="side-nav">
-      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Overtime Console</small></span></a>
-      <nav class="side-menu"><a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a><a href="/leave-requests"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a><a href="/daily-reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a><a class="active" href="/overtime-dashboard"><i class="fa-solid fa-business-time"></i>Overtime</a></nav>
+      <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Overtime Console</small></span></a>
+      <nav class="side-menu"><a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a><a href="/admin/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a><a href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a><a class="active" href="/admin/overtime"><i class="fa-solid fa-business-time"></i>Overtime</a></nav>
       <div class="rbac-card"><span class="security-badge">Admin role</span><p>Overtime is calculated from attendance start to checkout against an 8 hour shift.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
     </aside>
     <main class="workspace">

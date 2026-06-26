@@ -12,5 +12,11 @@ router.get('/admin/performance', requireRole('admin'), adminController.performan
 router.get('/admin/analytics', requireRole('admin'), adminController.analyticsPage);
 router.get('/admin/notifications', requireRole('admin'), adminController.notificationsPage);
 router.get('/admin/settings', requireRole('admin'), adminController.settingsPage);
+router.get('/employees', requireRole('admin'), (req, res) => res.redirect('/admin/employees'));
+router.get('/performance', requireRole('admin'), (req, res) => res.redirect('/admin/performance'));
+router.get('/performance-table', requireRole('admin'), (req, res) => res.redirect('/admin/performance'));
+router.get('/analytics', requireRole('admin'), (req, res) => res.redirect('/admin/analytics'));
+router.get('/notifications', requireRole('admin'), (req, res) => res.redirect('/admin/notifications'));
+router.get('/settings', requireRole('admin'), (req, res) => res.redirect('/admin/settings'));
 
 module.exports = router;

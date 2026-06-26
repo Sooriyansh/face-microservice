@@ -12,12 +12,12 @@
   <% const safeRecords = typeof records !== 'undefined' ? records : []; %>
   <div class="enterprise-layout">
     <aside class="side-nav">
-      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Admin Reports</small></span></a>
+      <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Admin Reports</small></span></a>
       <nav class="side-menu">
-        <a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
-        <a class="active" href="/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
-        <a href="/#employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
-        <a href="/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a class="active" href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
+        <a href="/admin/employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
+        <a href="/admin/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
         <!-- <a href="/employee"><i class="fa-solid fa-user-lock"></i>Employe Portal</a> -->
       </nav>
       <div class="rbac-card"><span class="security-badge">No camera here</span><p>Face Detection Preview and Mark Attendance are available only in the employee workspace.</p></div>

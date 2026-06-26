@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Device Status | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="<%= currentUser ? currentUser.role : 'employee' %>">
+  <% const safeRecords = typeof records !== 'undefined' ? records : []; %>
+  <% const safeEvents = typeof personalEvents !== 'undefined' ? personalEvents : []; %>
+  <% const safeWorkSession = typeof workSession !== 'undefined' ? workSession : null; %>
+  <div class="enterprise-layout employee-layout">
+    <%- include('partials/sidebar', { activePage: 'device' }) %>
+    <main class="workspace">
+      <%- include('partials/topbar', { syncLabel: 'Device status' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Device status</span><h1>Device Status</h1><p>Review your personal device, attendance, work-hour, and access-boundary status.</p></div></section>
+      <section class="employee-grid reveal">
+        <aside class="panel" id="device">
+          <div class="panel-header"><div><p class="eyebrow">Personal status</p><h2>Device Status</h2></div></div>
+          <div class="status-stack">
+            <div><span class="live-dot"></span><strong>Laptop Online</strong><p>Windows tracker connected</p></div>
+            <div><span class="live-dot"></span><strong>Attendance Status</strong><p><%= safeRecords.length ? 'Marked recently' : 'Pending face recognition' %></p></div>
+            <div><span class="live-dot"></span><strong>Working Hours</strong><p><%= safeWorkSession ? safeWorkSession.status.replace('_', ' ') : 'No active work session' %></p></div>
+            <div><span class="live-dot danger-dot"></span><strong>RBAC Boundary</strong><p>Other employee data is hidden</p></div>
+          </div>
+        </aside>
+        <div class="panel">
+          <div class="panel-header"><div><p class="eyebrow">Device activity</p><h2>Recent Device Signals</h2></div></div>
+          <div class="timeline-stream">
+            <% if (safeEvents.length === 0) { %><div><span class="event-dot"></span><strong>No device events captured yet</strong><p>Device activity appears after system monitoring reports events.</p></div><% } %>
+            <% safeEvents.slice(0, 8).forEach((event) => { %><div><span class="event-dot"></span><strong><%= event.event %></strong><p><%= new Date(event.occurredAt).toLocaleString() %> - <%= event.meaning || event.sourceLog || 'Device event' %></p></div><% }) %>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <%- include('partials/scripts') %>
+</body>
+</html>

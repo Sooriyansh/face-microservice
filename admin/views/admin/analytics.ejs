@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="admin">
+  <% const overview = typeof performanceOverview !== 'undefined' ? performanceOverview : {}; const topCards = overview.topCards || []; const attendance = overview.attendance || {}; const monthly = overview.monthly || {}; const yearly = overview.yearly || {}; %>
+  <div class="enterprise-layout performance-dashboard">
+    <%- include('partials/admin-sidebar', { activePage: 'analytics' }) %>
+    <main class="workspace">
+      <%- include('partials/admin-topbar', { searchId: 'analytics-search', searchPlaceholder: 'Search analytics', syncLabel: 'Live analytics' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Analytics</span><h1>Analytics</h1><p>Monthly productivity, attendance trends, annual rankings, and summary metrics.</p></div></section>
+      <section class="metric-grid performance-summary-grid reveal">
+        <% topCards.forEach((card) => { %><article class="metric-card analytics-card"><div class="analytics-card-top"><span class="metric-icon <%= card.tone %>"><i class="fa-solid <%= card.icon %>"></i></span><span class="trend-pill trend-<%= card.trend.direction %>"><i class="fa-solid fa-arrow-trend-<%= card.trend.direction === 'down' ? 'down' : 'up' %>"></i><%= Math.abs(card.trend.change) %>%</span></div><p><%= card.label %></p><strong><%= card.value %></strong><div class="mini-chart" aria-hidden="true"><% card.chart.forEach((value) => { %><span style="--h:<%= value %>%"></span><% }) %></div></article><% }) %>
+      </section>
+      <section class="dashboard-grid reveal">
+        <article class="panel"><div class="panel-header"><div><p class="eyebrow">Monthly Performance Dashboard</p><h2>Monthly employee comparison</h2></div></div><div class="monthly-insight-grid"><div class="score-ring small" style="--score:<%= monthly.productivityScore || 0 %>"><strong><%= monthly.productivityScore || 0 %>%</strong><span>Productivity</span></div><div class="analytics-stat-grid dense"><div><span>Working Days</span><strong><%= monthly.totalWorkingDays || 0 %></strong></div><div><span>Attendance</span><strong><%= monthly.totalAttendance || 0 %></strong></div><div><span>Completed</span><strong><%= monthly.completedTasks || 0 %></strong></div><div><span>Pending</span><strong><%= monthly.pendingTasks || 0 %></strong></div><div><span>Leave Taken</span><strong><%= monthly.leaveTaken || 0 %></strong></div><div><span>Overtime</span><strong><%= monthly.overtimeHours || 0 %>h</strong></div></div></div><div class="comparison-bars"><% (monthly.employeeComparison || []).forEach((item) => { %><div><span><%= item.label %></span><b style="width:<%= item.value %>%"></b><strong><%= item.value %>%</strong></div><% }) %></div></article>
+        <aside class="panel"><div class="panel-header"><div><p class="eyebrow">Annual Analytics</p><h2>Ranking highlights</h2></div></div><div class="ranking-list"><div><i class="fa-solid fa-calendar-check"></i><span>Best Attendance</span><strong><%= yearly.ranking?.bestAttendance?.name || '-' %></strong></div><div><i class="fa-solid fa-chart-simple"></i><span>Most Productive</span><strong><%= yearly.ranking?.mostProductive?.name || '-' %></strong></div><div><i class="fa-solid fa-shield-heart"></i><span>Most Consistent</span><strong><%= yearly.ranking?.mostConsistent?.name || '-' %></strong></div><div><i class="fa-solid fa-business-time"></i><span>Highest Overtime</span><strong><%= yearly.ranking?.highestOvertime?.name || '-' %></strong></div></div><div class="analytics-stat-grid dense"><div><span>Total Attendance</span><strong><%= yearly.totalAttendance || 0 %></strong></div><div><span>Completed Tasks</span><strong><%= yearly.totalCompletedTasks || 0 %></strong></div><div><span>Pending Tasks</span><strong><%= yearly.totalPendingTasks || 0 %></strong></div><div><span>Leave Days</span><strong><%= yearly.totalLeaveDays || 0 %></strong></div><div><span>Work Hours</span><strong><%= yearly.totalWorkHours || 0 %>h</strong></div><div><span>Overtime</span><strong><%= yearly.totalOvertimeHours || 0 %>h</strong></div></div></aside>
+      </section>
+      <section class="panel reveal"><div class="panel-header"><div><p class="eyebrow">Trend Visualizations</p><h2>Attendance and productivity trends</h2></div></div><div class="trend-grid"><div class="line-chart" style="--points:<%= (attendance.trend || []).map((item) => item.value).join(',') %>"><% (attendance.trend || []).forEach((item) => { %><span style="--v:<%= item.value %>%"><b><%= item.label %></b></span><% }) %></div><div class="donut-grid"><div class="score-ring small" style="--score:<%= attendance.weeklyRate || 0 %>"><strong><%= attendance.weeklyRate || 0 %>%</strong><span>Weekly Attendance</span></div><div class="score-ring small" style="--score:<%= attendance.monthlyRate || 0 %>"><strong><%= attendance.monthlyRate || 0 %>%</strong><span>Monthly Attendance</span></div><div class="score-ring small" style="--score:<%= attendance.yearlyRate || 0 %>"><strong><%= attendance.yearlyRate || 0 %>%</strong><span>Yearly Attendance</span></div></div></div></section>
+    </main>
+  </div>
+  <div class="toast-stack" id="toast-stack"></div>
+  <%- include('../../../views/shared/notification-center') %>
+  <script>window.firebaseWebConfig = <%- JSON.stringify(firebaseConfig || {}) %>;</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Performance | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="admin">
+  <%
+    const safeStudents = typeof students !== 'undefined' ? students : [];
+    const overview = typeof performanceOverview !== 'undefined' ? performanceOverview : {};
+    const taskRows = overview.taskRows || [];
+    const departments = [...new Set(safeStudents.map((student) => student.department || 'Unassigned'))].sort();
+    const fmtTime = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+    const statusTone = (status) => {
+      if (status === 'Completed' || status === 'Excellent' || status === 'Present') return 'success';
+      if (status === 'In Progress' || status === 'Good') return 'info';
+      if (status === 'Pending' || status === 'Average' || status === 'On Leave' || status === 'Partially Completed') return 'warning';
+      return 'danger';
+    };
+  %>
+  <div class="enterprise-layout performance-dashboard">
+    <%- include('partials/admin-sidebar', { activePage: 'performance' }) %>
+    <main class="workspace">
+      <%- include('partials/admin-topbar', { searchId: 'performance-search', searchPlaceholder: 'Search employee performance', syncLabel: 'Live performance' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Performance ledger</span><h1>Performance</h1><p>Attendance percentage, task completion, productivity score, leave count, overtime hours, and employee status.</p></div><button class="btn btn-secondary" type="button" data-export-table="performance-table-data" data-export-name="employee-performance.csv"><i class="fa-solid fa-file-csv"></i>Export CSV</button></section>
+      <section class="performance-filter-bar reveal" id="performance-filters">
+        <label><span>Date</span><input type="date" id="filter-date"></label>
+        <label><span>Employee</span><select id="filter-employee"><option value="">All employees</option><% taskRows.forEach((row) => { %><option value="<%= row.name %>"><%= row.name %></option><% }) %></select></label>
+        <label><span>Department</span><select id="filter-department"><option value="">All departments</option><% departments.forEach((department) => { %><option value="<%= department %>"><%= department %></option><% }) %></select></label>
+        <label><span>Attendance</span><select id="filter-attendance"><option value="">Any status</option><option>Present</option><option>Absent</option><option>On Leave</option></select></label>
+        <label><span>Task</span><select id="filter-task"><option value="">Any task status</option><option>Completed</option><option>Partially Completed</option><option>Pending</option><option>Not Started</option></select></label>
+        <label><span>Productivity</span><select id="filter-productivity"><option value="">Any level</option><option>Excellent</option><option>Good</option><option>Average</option><option>Needs Improvement</option></select></label>
+        <div class="quick-filter-group" aria-label="Quick filters"><button type="button" data-quick-filter="today">Today</button><button type="button" data-quick-filter="week">This Week</button><button type="button" data-quick-filter="month">This Month</button><button type="button" data-quick-filter="year">This Year</button></div>
+      </section>
+      <section class="panel reveal">
+        <div class="panel-header split"><div><p class="eyebrow">Today's Employee Task Status</p><h2>Work completion board</h2></div><button class="btn btn-secondary" type="button" data-export-table="today-task-table" data-export-name="today-task-status.csv"><i class="fa-solid fa-download"></i>Export Tasks</button></div>
+        <div class="table-wrap"><table id="today-task-table"><thead><tr><th>Employee Name</th><th>Department</th><th>Join Time</th><th>Checkout Time</th><th>Today's Task</th><th>Task Status</th><th>Progress</th><th>Work Summary</th></tr></thead><tbody>
+          <% if (!taskRows.length) { %><tr><td colspan="8">No employee performance records available yet.</td></tr><% } %>
+          <% taskRows.forEach((row) => { %><tr class="performance-filter-row" data-employee="<%= row.name %>" data-department="<%= row.department %>" data-attendance="<%= row.status %>" data-task="<%= row.taskStatus %>" data-productivity="<%= row.productivityLevel %>"><td><span class="person-cell"><span class="avatar"><%= (row.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= row.name %></strong></span></td><td><%= row.department %></td><td><%= fmtTime(row.joinTime) %></td><td><%= fmtTime(row.checkoutTime) %></td><td><%= row.todayTask %></td><td><span class="status-badge status-<%= statusTone(row.taskStatus) %>"><%= row.taskStatus %></span></td><td><div class="progress-track"><span style="width:<%= row.progress %>%"></span><b><%= row.progress %>%</b></div></td><td><%= row.workSummary %></td></tr><% }) %>
+        </tbody></table></div>
+      </section>
+      <section class="panel reveal">
+        <div class="panel-header split"><div><p class="eyebrow">Employee Performance Table</p><h2>Enterprise performance ledger</h2></div><div class="export-rack"><button class="btn btn-secondary" type="button" data-export-table="performance-table-data" data-export-name="attendance-reports.csv"><i class="fa-solid fa-calendar-check"></i>Attendance CSV</button><button class="btn btn-secondary" type="button" data-export-table="performance-table-data" data-export-name="productivity-reports.csv"><i class="fa-solid fa-chart-line"></i>Productivity CSV</button></div></div>
+        <div class="table-wrap"><table id="performance-table-data"><thead><tr><th>Employee Name</th><th>Attendance %</th><th>Tasks Completed</th><th>Pending Tasks</th><th>Productivity Score</th><th>Leave Count</th><th>Overtime Hours</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+          <% if (!taskRows.length) { %><tr><td colspan="9">No employees registered yet.</td></tr><% } %>
+          <% taskRows.forEach((row) => { %><tr class="performance-filter-row" data-employee="<%= row.name %>" data-department="<%= row.department %>" data-attendance="<%= row.status %>" data-task="<%= row.taskStatus %>" data-productivity="<%= row.productivityLevel %>"><td><span class="person-cell"><span class="avatar"><%= (row.name || 'E').slice(0,2).toUpperCase() %></span><strong><%= row.name %></strong></span></td><td><%= row.attendanceRate %>%</td><td><%= row.completedTasks %></td><td><%= row.pendingTasks %></td><td><span class="productivity-pill level-<%= row.productivityLevel.toLowerCase().replaceAll(' ', '-') %>"><%= row.productivityScore %>% <%= row.productivityLevel %></span></td><td><%= row.leaveCount %></td><td><%= row.overtimeHours %>h</td><td><span class="status-badge status-<%= statusTone(row.status) %>"><%= row.status %></span></td><td class="action-cluster"><a href="/admin/employees">View Profile</a><a href="/admin/reports?employee=<%= row.id %>">View Reports</a><a href="/admin/attendance">View Attendance</a><a href="/admin/system-events">View Activity</a></td></tr><% }) %>
+        </tbody></table></div>
+      </section>
+    </main>
+  </div>
+  <div class="toast-stack" id="toast-stack"></div>
+  <%- include('../../../views/shared/notification-center') %>
+  <script>window.firebaseWebConfig = <%- JSON.stringify(firebaseConfig || {}) %>;</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>

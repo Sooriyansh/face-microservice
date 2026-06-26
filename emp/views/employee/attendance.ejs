@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mark Attendance | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="<%= currentUser ? currentUser.role : 'employee' %>">
+  <% const safeRecords = typeof records !== 'undefined' ? records : []; %>
+  <div class="enterprise-layout employee-layout">
+    <%- include('partials/sidebar', { activePage: 'attendance' }) %>
+    <main class="workspace">
+      <%- include('partials/topbar', { syncLabel: 'Attendance scanner' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Secure personal attendance</span><h1>Mark Attendance</h1><p>Use face recognition to mark attendance with location and quality checks.</p></div></section>
+      <section class="employee-grid reveal">
+        <div class="panel scanner-console">
+          <div class="panel-header"><div><p class="eyebrow">Face Recognition Preview Camera</p><h2>Mark Attendance</h2></div><span class="panel-badge"><span class="live-dot"></span>Employee only</span></div>
+          <div class="camera-shell">
+            <div class="camera-frame scanner-frame large">
+              <video id="camera-feed" autoplay playsinline muted></video>
+              <canvas id="camera-canvas" hidden></canvas>
+              <span class="camera-reticle"></span><span class="scan-line camera-scan"></span><span class="face-box" id="attendance-face-box" hidden></span>
+              <div class="scanner-state" id="attendance-scanner-state">Initializing Camera</div>
+            </div>
+            <div class="quality-grid">
+              <div><strong id="attendance-confidence">Confidence 0%</strong><span>Live match score</span></div>
+              <div><strong id="attendance-face-state">Ready</strong><span>Face tracking</span></div>
+              <div><strong id="attendance-light-state">Lighting pending</strong><span>Brightness check</span></div>
+              <div><strong id="attendance-quality-state">Quality pending</strong><span>Sharpness check</span></div>
+            </div>
+            <div class="camera-controls">
+              <button type="button" id="start-camera" class="btn btn-primary"><i class="fa-solid fa-video"></i> Start Camera</button>
+              <button type="button" id="scan-now" class="btn btn-secondary"><i class="fa-solid fa-fingerprint"></i> Mark Attendance</button>
+              <button type="button" id="stop-camera" class="btn btn-secondary"><i class="fa-solid fa-video-slash"></i> Stop</button>
+            </div>
+            <p id="camera-status" class="helper-text">Camera is off.</p>
+            <p id="location-status" class="helper-text">Location capture starts with camera permission.</p>
+            <p id="camera-loader" class="loading-skeleton"></p>
+            <p id="recognition-result" class="form-status">Scanner is ready. Keep your face centered inside the frame.</p>
+          </div>
+        </div>
+        <aside class="panel">
+          <div class="panel-header"><div><p class="eyebrow">Attendance Status</p><h2>Today</h2></div></div>
+          <div class="status-stack">
+            <div><span class="live-dot"></span><strong>Attendance Status</strong><p><%= safeRecords.length ? 'Marked recently' : 'Pending face recognition' %></p></div>
+            <div><span class="live-dot"></span><strong>Personal Records</strong><p><%= safeRecords.length %> record(s)</p></div>
+            <div><span class="live-dot danger-dot"></span><strong>RBAC Boundary</strong><p>Only your records are visible here</p></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <%- include('partials/scripts') %>
+</body>
+</html>

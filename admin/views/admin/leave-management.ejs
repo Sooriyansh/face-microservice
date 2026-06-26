@@ -13,14 +13,14 @@
   <% const stats = typeof analytics !== 'undefined' ? analytics : { total: 0, approved: 0, rejected: 0, onLeaveToday: 0, departmentStats: {} }; %>
   <div class="enterprise-layout">
     <aside class="side-nav">
-      <a href="/" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>HRMS Console</small></span></a>
+      <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>HRMS Console</small></span></a>
       <nav class="side-menu">
-        <a href="/"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
-        <a href="/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
-        <a class="active" href="/leave-requests"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
-        <a href="/daily-reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a>
-        <a href="/overtime-dashboard"><i class="fa-solid fa-business-time"></i>Overtime</a>
-        <a href="/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
+        <a class="active" href="/admin/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
+        <a href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a>
+        <a href="/admin/overtime"><i class="fa-solid fa-business-time"></i>Overtime</a>
+        <a href="/admin/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
       </nav>
       <div class="rbac-card"><span class="security-badge">Admin role</span><p>Approve leave, review remarks, and export HR reports.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
     </aside>

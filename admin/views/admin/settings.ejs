@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="admin">
+  <div class="enterprise-layout">
+    <%- include('partials/admin-sidebar', { activePage: 'settings' }) %>
+    <main class="workspace">
+      <%- include('partials/admin-topbar', { searchId: 'settings-search', searchPlaceholder: 'Search settings', syncLabel: 'Admin settings' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Settings</span><h1>Settings</h1><p>Administrative route for account, notification, and system configuration entry points.</p></div></section>
+      <section class="metric-grid compact reveal">
+        <a class="metric-card" href="/admin/notifications"><span class="metric-icon warning"><i class="fa-solid fa-bell"></i></span><p>Notification Settings</p><strong>Open</strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon violet"><i class="fa-solid fa-timeline"></i></span><p>System Monitoring</p><strong>Open</strong></a>
+        <a class="metric-card" href="/admin/employees"><span class="metric-icon info"><i class="fa-solid fa-users-gear"></i></span><p>Employee Access</p><strong>Open</strong></a>
+      </section>
+    </main>
+  </div>
+  <div class="toast-stack" id="toast-stack"></div>
+  <%- include('../../../views/shared/notification-center') %>
+  <script>window.firebaseWebConfig = <%- JSON.stringify(firebaseConfig || {}) %>;</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+  <script src="/js/shared/script.js"></script>
+</body>
+</html>

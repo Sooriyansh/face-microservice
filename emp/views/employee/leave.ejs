@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Management | FaceAI Attend</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/shared/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body data-role="<%= currentUser ? currentUser.role : 'employee' %>">
+  <div class="enterprise-layout employee-layout">
+    <%- include('partials/sidebar', { activePage: 'leave' }) %>
+    <main class="workspace">
+      <%- include('partials/topbar', { syncLabel: 'Leave management' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Leave management</span><h1>Leave Management</h1><p>Submit sick, casual, half day, emergency, or unpaid leave requests.</p></div></section>
+      <section class="admin-grid reveal" id="leave-management">
+        <div class="panel">
+          <div class="panel-header split"><div><p class="eyebrow">Leave management</p><h2>Apply Leave</h2><p class="helper-text">Submit sick, casual, half day, emergency, or unpaid leave and track approval status.</p></div><span class="panel-badge" id="leave-balance-pill">Balance loading</span></div>
+          <form class="stack-form" id="leave-form">
+            <div class="form-grid">
+              <label><span>Leave Type</span><select name="leaveType" required><option>Sick Leave</option><option>Casual Leave</option><option>Half Day Leave</option><option>Emergency Leave</option><option>Unpaid Leave</option></select></label>
+              <label><span>Start Date</span><input type="date" name="startDate" required></label>
+              <label><span>End Date</span><input type="date" name="endDate" required></label>
+              <label><span>Number of Days</span><input type="number" name="daysPreview" min="0.5" step="0.5" value="1" readonly></label>
+              <label class="span-2"><span>Attachment (Optional)</span><input type="file" name="attachment" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"></label>
+            </div>
+            <label><span>Reason</span><textarea name="reason" rows="4" placeholder="Explain the leave reason..." required></textarea></label>
+            <button type="submit" class="btn btn-primary wide"><i class="fa-solid fa-paper-plane"></i>Submit Leave Request</button>
+            <p class="form-status" id="leave-form-status"></p>
+          </form>
+        </div>
+        <aside class="panel"><div class="panel-header"><div><p class="eyebrow">Leave balance</p><h2>My Leave Balance</h2></div></div><div class="leave-balance-ring"><strong id="leave-remaining">--</strong><span>Remaining paid leave days</span></div><div class="status-stack" id="leave-balance-details"><div><span class="event-dot"></span><strong>Loading leave balance</strong><p>Approved paid leaves reduce balance automatically.</p></div></div></aside>
+      </section>
+    </main>
+  </div>
+  <%- include('partials/scripts') %>
+</body>
+</html>
