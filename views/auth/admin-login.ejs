@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login | FaceAI Attend</title>
+  <title>Admin Sign In | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -13,17 +13,17 @@
   <header class="auth-top-nav">
     <a href="/login" class="brand-block auth-brand">
       <span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span>
-      <span><strong>FaceAI Attend</strong><small>Admin Security Console</small></span>
+      <span><strong>FaceAI Attend</strong><small>Admin Work Area</small></span>
     </a>
-    <a href="/login" class="admin-login-glow secondary"><i class="fa-solid fa-users"></i> Employee Login</a>
+    <a href="/login" class="admin-login-glow secondary"><i class="fa-solid fa-users"></i> Employee Sign In</a>
   </header>
 
   <main class="auth-shell single-auth-shell">
     <section class="auth-panel admin-auth-panel reveal">
       <div>
-        <span class="status-chip"><span class="live-dot"></span> Dedicated admin authentication</span>
-        <h1>Admin Login</h1>
-        <p>Admins authenticate with email and password only. No biometric registration is required for admin accounts.</p>
+        <span class="status-chip"><span class="live-dot"></span> Secure admin sign in</span>
+        <h1>Admin Sign In</h1>
+        <p>Admins sign in with email and password only. Face registration is not required for admin accounts.</p>
       </div>
       <% if (error) { %><p class="form-status status-error"><%= error %></p><% } %>
       <form class="stack-form auth-form" action="/admin-login" method="POST">

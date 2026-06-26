@@ -1,24 +1,24 @@
 <aside class="side-nav">
   <a href="/admin/dashboard" class="brand-block">
     <span class="brand-mark"><i class="fa-solid fa-chart-line"></i></span>
-    <span><strong>FaceAI</strong><small>Admin Console</small></span>
+    <span><strong>FaceAI</strong><small>Admin Work Area</small></span>
   </a>
   <nav class="side-menu">
-    <a class="<%= activePage === 'dashboard' ? 'active' : '' %>" href="/admin/dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</a>
+    <a class="<%= activePage === 'dashboard' ? 'active' : '' %>" href="/admin/dashboard"><i class="fa-solid fa-gauge-high"></i>Overview</a>
     <a class="<%= activePage === 'attendance' ? 'active' : '' %>" href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
     <a class="<%= activePage === 'employees' ? 'active' : '' %>" href="/admin/employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
     <a class="<%= activePage === 'leave' ? 'active' : '' %>" href="/admin/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
     <a class="<%= activePage === 'reports' ? 'active' : '' %>" href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a>
     <a class="<%= activePage === 'overtime' ? 'active' : '' %>" href="/admin/overtime"><i class="fa-solid fa-business-time"></i>Overtime</a>
     <a class="<%= activePage === 'notifications' ? 'active' : '' %>" href="/admin/notifications"><i class="fa-solid fa-bell"></i>Notifications</a>
-    <a class="<%= activePage === 'system-events' ? 'active' : '' %>" href="/admin/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
-    <a class="<%= activePage === 'performance' ? 'active' : '' %>" href="/admin/performance"><i class="fa-solid fa-table-list"></i>Performance</a>
-    <a class="<%= activePage === 'analytics' ? 'active' : '' %>" href="/admin/analytics"><i class="fa-solid fa-chart-simple"></i>Analytics</a>
+    <a class="<%= activePage === 'system-events' ? 'active' : '' %>" href="/admin/system-events"><i class="fa-solid fa-timeline"></i>Activity History</a>
+    <a class="<%= activePage === 'performance' ? 'active' : '' %>" href="/admin/performance"><i class="fa-solid fa-table-list"></i>Work Performance</a>
+    <a class="<%= activePage === 'analytics' ? 'active' : '' %>" href="/admin/analytics"><i class="fa-solid fa-chart-simple"></i>Reports & Insights</a>
     <a class="<%= activePage === 'settings' ? 'active' : '' %>" href="/admin/settings"><i class="fa-solid fa-gear"></i>Settings</a>
   </nav>
   <div class="rbac-card">
-    <span class="security-badge">Admin role</span>
-    <p>Route-based access to attendance, employees, reports, leave, overtime, notifications, events, performance, and analytics.</p>
+    <span class="security-badge">Admin access</span>
+    <p>Access attendance, employee records, reports, leave, overtime, notifications, activity history, performance, and insights.</p>
     <form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form>
   </div>
 </aside>

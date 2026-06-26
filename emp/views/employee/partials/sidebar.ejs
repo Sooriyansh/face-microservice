@@ -2,21 +2,21 @@
 <aside class="side-nav">
   <a href="/employee" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-fingerprint"></i></span><span><strong>FaceAI</strong><small>Employee Portal</small></span></a>
   <nav class="side-menu">
-    <a class="<%= activePage === 'dashboard' ? 'active' : '' %>" href="/employee"><i class="fa-solid fa-gauge-high"></i>Dashboard</a>
+    <a class="<%= activePage === 'dashboard' ? 'active' : '' %>" href="/employee"><i class="fa-solid fa-gauge-high"></i>Overview</a>
     <a class="<%= activePage === 'attendance' ? 'active' : '' %>" href="/employee/attendance"><i class="fa-solid fa-camera"></i>Mark Attendance</a>
-    <a class="<%= activePage === 'enrollment' ? 'active' : '' %>" href="/employee/enrollment"><i class="fa-solid fa-id-card-clip"></i>Identity Enrollment</a>
-    <a class="<%= activePage === 'work-session' ? 'active' : '' %>" href="/employee/work-session"><i class="fa-solid fa-satellite-dish"></i>Daily Work Session</a>
-    <a class="<%= activePage === 'leave' ? 'active' : '' %>" href="/employee/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Management</a>
+    <a class="<%= activePage === 'enrollment' ? 'active' : '' %>" href="/employee/enrollment"><i class="fa-solid fa-id-card-clip"></i>Face Registration</a>
+    <a class="<%= activePage === 'work-session' ? 'active' : '' %>" href="/employee/work-session"><i class="fa-solid fa-satellite-dish"></i>Daily Workday</a>
+    <a class="<%= activePage === 'leave' ? 'active' : '' %>" href="/employee/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
     <a class="<%= activePage === 'leave-history' ? 'active' : '' %>" href="/employee/leave-history"><i class="fa-solid fa-calendar-days"></i>Leave History</a>
-    <a class="<%= activePage === 'overtime' ? 'active' : '' %>" href="/employee/overtime"><i class="fa-solid fa-business-time"></i>Overtime Tracking</a>
+    <a class="<%= activePage === 'overtime' ? 'active' : '' %>" href="/employee/overtime"><i class="fa-solid fa-business-time"></i>Overtime Hours</a>
     <a class="<%= activePage === 'my-attendance' ? 'active' : '' %>" href="/employee/my-attendance"><i class="fa-solid fa-calendar-user"></i>My Attendance</a>
-    <a class="<%= activePage === 'activity' ? 'active' : '' %>" href="/employee/activity"><i class="fa-solid fa-clock-rotate-left"></i>My Activity Logs</a>
-    <a class="<%= activePage === 'device' ? 'active' : '' %>" href="/employee/device"><i class="fa-solid fa-laptop"></i>Device Status</a>
+    <a class="<%= activePage === 'activity' ? 'active' : '' %>" href="/employee/activity"><i class="fa-solid fa-clock-rotate-left"></i>My Activity History</a>
+    <a class="<%= activePage === 'device' ? 'active' : '' %>" href="/employee/device"><i class="fa-solid fa-laptop"></i>Device Activity</a>
   </nav>
   <div class="rbac-card">
     <span class="security-badge"><%= sidebarUser ? sidebarUser.role : 'Employee' %> role</span>
     <p>You can view only your own attendance, login history, system events, working hours, and device activity.</p>
-    <% if (sidebarUser && sidebarUser.role === 'admin') { %><a class="mini-link" href="/admin/dashboard">Admin dashboard</a><% } %>
+    <% if (sidebarUser && sidebarUser.role === 'admin') { %><a class="mini-link" href="/admin/dashboard">Admin overview</a><% } %>
     <form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form>
   </div>
 </aside>

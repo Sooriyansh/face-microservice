@@ -15,15 +15,15 @@
       <span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span>
       <span><strong>FaceAI Attend</strong><small>Admin Account Setup</small></span>
     </a>
-    <a href="/admin-login" class="admin-login-glow"><i class="fa-solid fa-user-shield"></i> Admin Login</a>
+    <a href="/admin-login" class="admin-login-glow"><i class="fa-solid fa-user-shield"></i> Admin Sign In</a>
   </header>
 
   <main class="auth-shell single-auth-shell">
     <section class="auth-panel admin-auth-panel reveal">
       <div>
-        <span class="status-chip"><span class="live-dot"></span> Password-only admin signup</span>
+        <span class="status-chip"><span class="live-dot"></span> Password-only admin account setup</span>
         <h1>Create Admin Account</h1>
-        <p>Admin authentication uses email and password only.</p>
+        <p>Admin accounts use email and password only.</p>
       </div>
       <% if (error) { %><p class="form-status status-error"><%= error %></p><% } %>
       <form class="stack-form auth-form" action="/signup" method="POST">

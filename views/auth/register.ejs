@@ -18,7 +18,7 @@
       <div>
         <span class="status-chip"><span class="live-dot"></span> Employee onboarding</span>
         <h1>Create Employee Account</h1>
-        <p>Register your credentials now. Face enrollment is optional and can be completed later.</p>
+        <p>Create your account now. Face sign-in is optional and can be set up later.</p>
       </div>
       <% if (error) { %><p class="form-status status-error"><%= error %></p><% } %>
 
@@ -38,8 +38,8 @@
         <section class="employee-biometric-section employee-only" id="signup-biometric-section">
           <div class="panel-header split">
             <div>
-              <p class="eyebrow">Optional Employee Biometric Enrollment</p>
-              <h2>Identity Enrollment</h2>
+              <p class="eyebrow">Optional Employee Face Registration</p>
+              <h2>Face Registration</h2>
               <p class="helper-text">Skip this section to create the account with password login only.</p>
             </div>
             <span class="panel-badge" id="signup-biometric-progress">0% complete</span>
@@ -59,22 +59,22 @@
               <span>Right angle scan</span>
               <span>Slight upward scan</span>
               <span>Slight downward scan</span>
-              <span>AI verification</span>
-              <span>Biometric upload</span>
+              <span>Face check</span>
+              <span>Secure face upload</span>
             </div>
             <div class="quality-grid">
-              <div><strong id="face-quality">Quality 0%</strong><span>Capture quality indicator</span></div>
-              <div><strong id="lighting-quality">Lighting pending</strong><span>Lighting quality detection</span></div>
-              <div><strong id="face-validation">Face validation pending</strong><span>Real-time face validation</span></div>
+              <div><strong id="face-quality">Quality 0%</strong><span>Photo quality</span></div>
+              <div><strong id="lighting-quality">Lighting pending</strong><span>Lighting check</span></div>
+              <div><strong id="face-validation">Face check pending</strong><span>Live face check</span></div>
               <div><strong id="alignment-status">Align face</strong><span>Head movement guidance</span></div>
             </div>
             <div class="camera-controls">
               <button type="button" id="start-enrollment-camera" class="btn btn-secondary"><i class="fa-solid fa-video"></i> Start Camera</button>
-              <button type="button" id="capture-enrollment" class="btn btn-primary"><i class="fa-solid fa-crosshairs"></i> Auto Multi-Angle Scan</button>
+              <button type="button" id="capture-enrollment" class="btn btn-primary"><i class="fa-solid fa-crosshairs"></i> Capture Face Photos</button>
               <button type="button" id="stop-enrollment-camera" class="btn btn-secondary"><i class="fa-solid fa-video-slash"></i> Stop</button>
             </div>
             <p id="enrollment-camera-status" class="helper-text">Camera is off. Start camera only if you want to enable face login now.</p>
-            <p id="enrollment-sample-status" class="form-status">Optional: capture 6+ samples to enable face login now.</p>
+            <p id="enrollment-sample-status" class="form-status">Optional: capture 6 or more face photos to enable face sign-in now.</p>
           </div>
           <div id="enrollment-preview" class="sample-grid"></div>
         </section>
@@ -82,7 +82,7 @@
         <button class="btn btn-primary wide" type="submit"><i class="fa-solid fa-user-plus"></i> Create Employee Account</button>
         <p id="signup-form-status" class="form-status"></p>
       </form>
-      <p class="auth-switch">Already have an employee account? <a href="/login">Login</a> · Admin? <a href="/admin-signup">Create Admin Account</a></p>
+      <p class="auth-switch">Already have an employee account? <a href="/login">Sign In</a> · Admin? <a href="/admin-signup">Create Admin Account</a></p>
     </section>
   </main>
   <div class="toast-stack" id="toast-stack"></div>

@@ -13,20 +13,20 @@
   <div class="enterprise-layout">
     <%- include('partials/admin-sidebar', { activePage: 'notifications' }) %>
     <main class="workspace">
-      <%- include('partials/admin-topbar', { searchId: 'notification-search', searchPlaceholder: 'Search notifications', syncLabel: 'Notification center' }) %>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Notification System</span><h1>Notifications</h1><p>Send realtime in-app and browser push notifications to selected employees, and review recent notification records.</p></div></section>
+      <%- include('partials/admin-topbar', { searchId: 'notification-search', searchPlaceholder: 'Search notifications', syncLabel: 'Notification Center' }) %>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee Messages</span><h1>Notifications</h1><p>Send in-app and browser messages to selected employees, and review recent message history.</p></div></section>
       <section class="panel reveal">
-        <div class="panel-header split"><div><p class="eyebrow">Employee Message</p><h2>Send employee message</h2><p class="helper-text">Employee must enable browser notifications for push delivery.</p></div><span class="panel-badge">Admin</span></div>
+        <div class="panel-header split"><div><p class="eyebrow">Employee Message</p><h2>Send employee message</h2><p class="helper-text">Employees must allow browser notifications to receive alerts outside the app.</p></div><span class="panel-badge">Admin</span></div>
         <form class="stack-form" id="admin-employee-message-form">
           <div class="form-grid"><label><span>Employee</span><select name="recipientId" required><option value="">Select employee</option><% safeStudents.forEach((student) => { %><option value="<%= student._id %>"><%= student.name %><%= student.department ? ` - ${student.department}` : '' %></option><% }) %></select></label><label><span>Title</span><input type="text" name="title" maxlength="160" value="Admin message" required></label></div>
-          <label><span>Message</span><textarea name="message" rows="3" maxlength="1000" required>Message from admin dashboard.</textarea></label>
-          <div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i>Send Notification</button><span class="form-status" id="admin-employee-message-status">Employee must enable browser notifications for push delivery.</span></div>
+          <label><span>Message</span><textarea name="message" rows="3" maxlength="1000" required>Message from the admin team.</textarea></label>
+          <div class="form-actions"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i>Send Message</button><span class="form-status" id="admin-employee-message-status">Employees must allow browser notifications to receive alerts outside the app.</span></div>
         </form>
       </section>
       <section class="panel reveal">
-        <div class="panel-header"><div><p class="eyebrow">Recent records</p><h2>Notification history</h2></div></div>
+        <div class="panel-header"><div><p class="eyebrow">Recent records</p><h2>Message History</h2></div></div>
         <div class="table-wrap"><table><thead><tr><th>Recipient</th><th>Role</th><th>Title</th><th>Type</th><th>Priority</th><th>Created</th></tr></thead><tbody>
-          <% if (!safeNotifications.length) { %><tr><td colspan="6">No notifications found.</td></tr><% } %>
+          <% if (!safeNotifications.length) { %><tr><td colspan="6">No messages found.</td></tr><% } %>
           <% safeNotifications.forEach((notification) => { %><tr><td><%= notification.recipientName || notification.recipientId || '-' %></td><td><%= notification.recipientRole || '-' %></td><td><%= notification.title || '-' %></td><td><%= notification.type || 'General' %></td><td><%= notification.priority || 'normal' %></td><td><%= notification.createdAt ? new Date(notification.createdAt).toLocaleString() : '-' %></td></tr><% }) %>
         </tbody></table></div>
       </section>

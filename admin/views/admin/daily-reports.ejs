@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Employee Daily Reports | FaceAI Attend</title>
+  <title>Daily Work Reports | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -17,12 +17,12 @@
     <aside class="side-nav">
       <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Reports Console</small></span></a>
       <nav class="side-menu">
-        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Overview</a>
         <a href="/admin/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
-        <a class="active" href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Employee Daily Reports</a>
+        <a class="active" href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Daily Work Reports</a>
         <a href="/admin/overtime"><i class="fa-solid fa-business-time"></i>Overtime</a>
       </nav>
-      <div class="rbac-card"><span class="security-badge">Admin role</span><p>Daily plans and checkout reports appear here after employees finish work.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
+      <div class="rbac-card"><span class="security-badge">Admin access</span><p>Daily plans and checkout reports appear here after employees finish work.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
     </aside>
     <main class="workspace">
       <header class="topbar">
@@ -34,7 +34,7 @@
           <a class="btn btn-secondary" href="/api/hrms/admin/export/daily-reports/pdf"><i class="fa-solid fa-file-pdf"></i>PDF</a>
         </div>
       </header>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee checkout reports</span><h1>Employee Daily Reports</h1><p>Review join time, checkout time, daily plans, work summaries, pending work, and task status.</p></div></section>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee checkout reports</span><h1>Daily Work Reports</h1><p>Review join time, checkout time, daily plans, work summaries, pending work, and task status.</p></div></section>
       <section class="panel reveal">
         <form class="filter-controls report-filter-bar" method="GET" action="/admin/reports">
           <label><span>Date</span><input type="date" name="date" value="<%= safeFilters.date || '' %>"></label>
@@ -45,7 +45,7 @@
         </form>
       </section>
       <section class="panel reveal">
-        <div class="table-wrap"><table><thead><tr><th>Employee Name</th><th>Date</th><th>Join Time</th><th>Checkout Time</th><th>Daily Plan</th><th>Work Summary</th><th>Pending Work</th><th>Task Status</th></tr></thead><tbody id="daily-reports-body">
+        <div class="table-wrap"><table><thead><tr><th>Employee Name</th><th>Date</th><th>Start Time</th><th>End Time</th><th>Work Plan</th><th>Completed Work</th><th>Pending Work</th><th>Work Status</th></tr></thead><tbody id="daily-reports-body">
           <% if (!safeReports.length) { %><tr><td colspan="8">No daily work reports match the selected filters.</td></tr><% } %>
           <% safeReports.forEach((report) => { %>
             <tr data-status="<%= report.taskStatus || 'Pending' %>">

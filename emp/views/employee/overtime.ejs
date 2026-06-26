@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Overtime Tracking | FaceAI Attend</title>
+  <title>Overtime Hours | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -13,17 +13,17 @@
     <%- include('partials/sidebar', { activePage: 'overtime' }) %>
     <main class="workspace">
       <%- include('partials/topbar', { syncLabel: 'Work hours' }) %>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Overtime tracking</span><h1>Overtime Tracking</h1><p>Review work hours, overtime, weekend hours, and payroll-ready work-hour trends.</p></div></section>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Overtime hours</span><h1>Overtime Hours</h1><p>Review regular hours, overtime, weekend hours, and payroll-ready work-hour totals.</p></div></section>
       <section class="panel reveal" id="overtime-tracking">
-        <div class="panel-header split"><div><p class="eyebrow">Overtime tracking</p><h2>My Work Hours</h2><p class="helper-text">Overtime is calculated automatically after checkout using the 8 hour standard shift.</p></div><span class="panel-badge">Standard shift: 8h/day</span></div>
+        <div class="panel-header split"><div><p class="eyebrow">Overtime hours</p><h2>My Work Hours</h2><p class="helper-text">Overtime is calculated automatically after checkout using the 8 hour standard shift.</p></div><span class="panel-badge">Standard shift: 8h/day</span></div>
         <div class="metric-grid compact">
-          <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-clock"></i></span><p>Today's Working Hours</p><strong id="ot-today-hours">0m</strong></div>
+          <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-clock"></i></span><p>Today's Work Hours</p><strong id="ot-today-hours">0m</strong></div>
           <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-bolt"></i></span><p>Today's Overtime</p><strong id="ot-today-overtime">0m</strong></div>
           <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-calendar-week"></i></span><p>Weekly Overtime</p><strong id="ot-weekly">0m</strong></div>
           <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-chart-line"></i></span><p>Monthly Overtime</p><strong id="ot-monthly">0m</strong></div>
           <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-umbrella-beach"></i></span><p>Weekend Hours</p><strong id="ot-weekend">0m</strong></div>
         </div>
-        <div class="mini-chart-grid overtime-charts"><div class="chart-tile"><strong>Weekly Work Hours</strong><span id="weekly-work-bar" style="--w:0%"></span><small>Updates after checkout</small></div><div class="chart-tile"><strong>Monthly Overtime Trend</strong><span id="monthly-overtime-bar" style="--w:0%"></span><small>Automatic payroll-ready calculation</small></div></div>
+        <div class="mini-chart-grid overtime-charts"><div class="chart-tile"><strong>Weekly Work Hours</strong><span id="weekly-work-bar" style="--w:0%"></span><small>Updates after checkout</small></div><div class="chart-tile"><strong>Monthly Overtime</strong><span id="monthly-overtime-bar" style="--w:0%"></span><small>Automatic payroll-ready calculation</small></div></div>
       </section>
     </main>
   </div>

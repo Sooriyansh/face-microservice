@@ -14,17 +14,17 @@
     <%- include('partials/admin-sidebar', { activePage: 'employees' }) %>
     <main class="workspace">
       <%- include('partials/admin-topbar', { searchId: 'employee-search', searchPlaceholder: 'Search employees', syncLabel: 'Employee directory' }) %>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee Directory</span><h1>Employees</h1><p>Registered employee profiles, face labels, departments, joining dates, and current live session status.</p></div></section>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Employee Directory</span><h1>Employees</h1><p>View employee profiles, employee face IDs, departments, joining dates, and current workday status.</p></div></section>
       <section class="metric-grid compact reveal">
         <div class="metric-card"><span class="metric-icon info"><i class="fa-solid fa-users"></i></span><p>Total Employees</p><strong><%= safeStudents.length %></strong></div>
-        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-bolt"></i></span><p>Live Sessions</p><strong><%= safeLiveSessions.length %></strong></div>
+        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-bolt"></i></span><p>Active Workdays</p><strong><%= safeLiveSessions.length %></strong></div>
         <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-building"></i></span><p>Departments</p><strong><%= new Set(safeStudents.map((student) => student.department || 'Unassigned')).size %></strong></div>
       </section>
       <section class="panel reveal">
-        <div class="panel-header"><div><p class="eyebrow">Employee Directory</p><h2>Registered employees</h2></div></div>
+        <div class="panel-header"><div><p class="eyebrow">Employee Directory</p><h2>Registered Employees</h2></div></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Employee</th><th>Face Label</th><th>Department</th><th>Joining</th><th>Live Session</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Employee</th><th>Employee Face ID</th><th>Department</th><th>Joining</th><th>Current Workday</th><th>Actions</th></tr></thead>
             <tbody id="students-table-body">
               <% if (!safeStudents.length) { %><tr><td colspan="6">No employees registered yet.</td></tr><% } %>
               <% safeStudents.forEach((student) => { const session = safeLiveSessions.find((item) => String(item.employee && item.employee._id ? item.employee._id : item.employee) === String(student._id)); %>

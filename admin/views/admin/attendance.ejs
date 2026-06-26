@@ -14,10 +14,10 @@
     <aside class="side-nav">
       <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>Admin Reports</small></span></a>
       <nav class="side-menu">
-        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Overview</a>
         <a class="active" href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
         <a href="/admin/employees"><i class="fa-solid fa-users-gear"></i>Employees</a>
-        <a href="/admin/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+        <a href="/admin/system-events"><i class="fa-solid fa-timeline"></i>Activity History</a>
         <!-- <a href="/employee"><i class="fa-solid fa-user-lock"></i>Employe Portal</a> -->
       </nav>
       <div class="rbac-card"><span class="security-badge">No camera here</span><p>Face Detection Preview and Mark Attendance are available only in the employee workspace.</p></div>
@@ -31,7 +31,6 @@
         <div class="topbar-actions">
           <span class="sync-pill"><span class="live-dot"></span>Live sync</span>
           <span class="clock" id="real-time-clock">--:--</span>
-          <button class="icon-button theme-toggle" type="button" aria-label="Toggle theme"><i class="fa-solid fa-moon"></i></button>
           <span class="security-badge"><%= currentUser ? currentUser.role : 'admin' %></span>
           <button id="refresh-attendance" class="btn btn-primary"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
         </div>
@@ -48,7 +47,7 @@
 
       <section class="metric-grid compact reveal">
         <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-user-check"></i></span><p>Present Records</p><strong><%= safeRecords.length %></strong></div>
-        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-fingerprint"></i></span><p>Avg Confidence</p><strong>99.1%</strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-fingerprint"></i></span><p>Avg Match Accuracy</p><strong>99.1%</strong></div>
         <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-location-dot"></i></span><p>Geo Captures</p><strong><%= safeRecords.filter((record) => record.location && record.location.latitude != null).length %></strong></div>
         <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span><p>Sync State</p><strong>Live</strong></div>
       </section>
@@ -56,11 +55,11 @@
       <section class="panel reveal">
         <div class="panel-header split">
           <div><p class="eyebrow">Reports</p><h2>All Attendance Records</h2><p id="attendance-page-status" class="helper-text">Latest records shown below.</p></div>
-          <div class="filter-controls"><input type="date" id="attendance-date-filter" aria-label="Date filter"><button class="btn btn-secondary" id="export-attendance-logs" type="button"><i class="fa-solid fa-file-export"></i> Export Logs</button></div>
+          <div class="filter-controls"><input type="date" id="attendance-date-filter" aria-label="Date filter"><button class="btn btn-secondary" id="export-attendance-logs" type="button"><i class="fa-solid fa-file-export"></i> Export Records</button></div>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Employee</th><th>Face Label</th><th>Marked At</th><th>Confidence</th><th>Location</th><th>Status</th></tr></thead>
+            <thead><tr><th>Employee</th><th>Employee Face ID</th><th>Marked At</th><th>Match Accuracy</th><th>Location</th><th>Status</th></tr></thead>
             <tbody id="attendance-page-body">
               <% if (safeRecords.length === 0) { %><tr><td colspan="6">No attendance records found.</td></tr><% } %>
               <% safeRecords.forEach((record) => { %>

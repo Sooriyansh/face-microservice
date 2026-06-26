@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | FaceAI Attend</title>
+  <title>Admin Overview | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -25,25 +25,25 @@
       <section class="hero-panel reveal performance-hero">
         <div>
           <span class="status-chip"><span class="live-dot"></span>Admin Overview</span>
-          <h1>Admin dashboard</h1>
-          <p>Summary widgets and route-based shortcuts for the FaceAI attendance and HRMS console.</p>
+          <h1>Admin overview</h1>
+          <p>Key attendance, employee, leave, and work activity information with shortcuts to admin tools.</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i> View Attendance</a>
-            <a class="btn btn-secondary" href="/admin/analytics"><i class="fa-solid fa-chart-simple"></i> Open Analytics</a>
+            <a class="btn btn-secondary" href="/admin/analytics"><i class="fa-solid fa-chart-simple"></i> Open Reports & Insights</a>
           </div>
         </div>
         <div class="performance-orbit">
           <div class="score-ring" style="--score:<%= monthly.productivityScore || 0 %>"><strong><%= monthly.productivityScore || 0 %>%</strong><span>Productivity</span></div>
           <div class="orbit-stat top"><b><%= attendance.today || todayAttendanceCount || 0 %></b><small>Present Today</small></div>
           <div class="orbit-stat right"><b><%= studentCount || 0 %></b><small>Employees</small></div>
-          <div class="orbit-stat bottom"><b><%= systemEventCount || 0 %></b><small>System Events</small></div>
+          <div class="orbit-stat bottom"><b><%= systemEventCount || 0 %></b><small>Activity History</small></div>
         </div>
       </section>
 
       <section class="metric-grid compact reveal">
         <a class="metric-card" href="/admin/employees"><span class="metric-icon info"><i class="fa-solid fa-users"></i></span><p>Total Employees</p><strong><%= studentCount || 0 %></strong></a>
         <a class="metric-card" href="/admin/attendance"><span class="metric-icon success"><i class="fa-solid fa-user-check"></i></span><p>Present Today</p><strong><%= todayAttendanceCount || attendance.today || 0 %></strong></a>
-        <a class="metric-card" href="/admin/system-events"><span class="metric-icon violet"><i class="fa-solid fa-timeline"></i></span><p>System Events</p><strong><%= systemEventCount || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon violet"><i class="fa-solid fa-timeline"></i></span><p>Activity History</p><strong><%= systemEventCount || 0 %></strong></a>
         <a class="metric-card" href="/admin/leave"><span class="metric-icon warning"><i class="fa-solid fa-calendar-minus"></i></span><p>Upcoming Leaves</p><strong><%= upcomingAdminLeaves.length %></strong></a>
       </section>
 
@@ -51,7 +51,7 @@
         <article class="panel">
           <div class="panel-header split">
             <div><p class="eyebrow">Navigation</p><h2>Admin modules</h2></div>
-            <span class="panel-badge">Multi-page</span>
+            <span class="panel-badge">More tools</span>
           </div>
           <div class="metric-grid compact">
             <a class="metric-card" href="/admin/attendance"><span class="metric-icon success"><i class="fa-solid fa-calendar-check"></i></span><p>Attendance</p><strong>Open</strong></a>
@@ -59,19 +59,19 @@
             <a class="metric-card" href="/admin/reports"><span class="metric-icon"><i class="fa-solid fa-clipboard-list"></i></span><p>Daily Reports</p><strong>Open</strong></a>
             <a class="metric-card" href="/admin/overtime"><span class="metric-icon violet"><i class="fa-solid fa-business-time"></i></span><p>Overtime</p><strong>Open</strong></a>
             <a class="metric-card" href="/admin/notifications"><span class="metric-icon warning"><i class="fa-solid fa-bell"></i></span><p>Notifications</p><strong>Open</strong></a>
-            <a class="metric-card" href="/admin/performance"><span class="metric-icon"><i class="fa-solid fa-table-list"></i></span><p>Performance</p><strong>Open</strong></a>
+            <a class="metric-card" href="/admin/performance"><span class="metric-icon"><i class="fa-solid fa-table-list"></i></span><p>Work Performance</p><strong>Open</strong></a>
           </div>
         </article>
 
         <aside class="panel">
           <div class="panel-header">
-            <div><p class="eyebrow">Recent Signals</p><h2>Overview only</h2></div>
+            <div><p class="eyebrow">Recent Updates</p><h2>Quick summary</h2></div>
           </div>
           <div class="ranking-list">
             <div><i class="fa-solid fa-calendar-check"></i><span>Recent attendance</span><strong><%= safeRecentAttendance.length %></strong></div>
             <div><i class="fa-solid fa-bell"></i><span>Admin notifications</span><strong><%= latestAdminNotifications.length %></strong></div>
             <div><i class="fa-solid fa-calendar-minus"></i><span>Upcoming leaves</span><strong><%= upcomingAdminLeaves.length %></strong></div>
-            <div><i class="fa-solid fa-chart-line"></i><span>Monthly productivity</span><strong><%= monthly.productivityScore || 0 %>%</strong></div>
+            <div><i class="fa-solid fa-chart-line"></i><span>Monthly work progress</span><strong><%= monthly.productivityScore || 0 %>%</strong></div>
           </div>
         </aside>
       </section>

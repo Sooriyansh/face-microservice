@@ -4,7 +4,6 @@
   <div class="topbar-actions">
     <span class="sync-pill"><span class="live-dot"></span><%= typeof syncLabel !== 'undefined' ? syncLabel : 'Live sync' %></span>
     <span class="clock" id="real-time-clock">--:--</span>
-    <button class="icon-button theme-toggle" type="button" aria-label="Toggle theme"><i class="fa-solid fa-moon"></i></button>
     <button class="icon-button notification-trigger" id="notification-button" type="button" aria-label="Notifications"><i class="fa-solid fa-bell"></i><span class="notification-count" id="notification-count" hidden>0</span></button>
     <div class="profile-menu">
       <button class="profile-trigger" type="button"><span class="avatar"><%= currentUser ? currentUser.name.slice(0,2).toUpperCase() : 'AD' %></span><span class="profile-meta"><%= currentUser ? currentUser.name : 'Admin' %></span><i class="fa-solid fa-chevron-down"></i></button>

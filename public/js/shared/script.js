@@ -2,94 +2,94 @@ const LoadingManager = (() => {
   const profiles = [
     {
       match: ({ url }) => url.includes('/employee-face-login'),
-      title: 'Face Login',
-      success: 'Face authentication completed successfully.',
+      title: 'Face Sign In',
+      success: 'Face sign-in completed successfully.',
       messages: [
-        'Authenticating Credentials...',
-        'Verifying Face Identity...',
-        'Matching Face Data...',
-        'Creating Secure Session...',
-        'Redirecting User...',
+        'Checking your sign-in details...',
+        'Checking your face...',
+        'Matching your face...',
+        'Opening your secure account...',
+        'Opening your overview...',
       ],
     },
     {
       match: ({ url }) => url.includes('/api/attendance/scan'),
-      title: 'Attendance Marking',
+      title: 'Marking Attendance',
       success: 'Attendance marked successfully.',
       messages: [
-        'Verifying Identity...',
-        'Analyzing Facial Features...',
-        'Matching Face Data...',
-        'Recording Attendance...',
-        'Syncing Attendance Record...',
+        'Checking your employee details...',
+        'Checking your face photo...',
+        'Matching your face...',
+        'Saving attendance...',
+        'Updating attendance record...',
       ],
     },
     {
       match: ({ url }) => url.includes('/api/students') || url.includes('/signup'),
-      title: 'Biometric Enrollment',
+      title: 'Face Registration',
       success: 'Face registered successfully.',
       messages: [
-        'Analyzing Facial Features...',
-        'Capturing Face Angles...',
-        'Generating Face Embeddings...',
-        'Encrypting Biometric Data...',
-        'Uploading Securely...',
-        'Activating Employee Account...',
+        'Checking your face photo...',
+        'Capturing face photos...',
+        'Creating your face profile...',
+        'Securing your face profile...',
+        'Uploading securely...',
+        'Activating employee account...',
       ],
     },
     {
       match: ({ url }) => url.includes('/api/work-sessions/join'),
-      title: 'Join Work Session',
-      success: 'Work session started successfully.',
+      title: 'Start Workday',
+      success: 'Workday started successfully.',
       messages: [
-        'Saving Daily Plan...',
-        'Starting Work Session...',
-        'Activating Activity Monitor...',
-        'Syncing Work Session...',
+        'Saving Work Plan...',
+        'Starting your workday...',
+        'Starting work activity tracking...',
+        'Updating workday record...',
       ],
     },
     {
       match: ({ url }) => url.includes('/checkout'),
-      title: 'Checkout Work Session',
+      title: 'Check Out',
       success: 'Daily report submitted successfully.',
       messages: [
         'Saving Daily Report...',
-        'Updating Work Session...',
-        'Generating Activity Record...',
+        'Updating workday record...',
+        'Preparing activity summary...',
         'Finalizing Checkout...',
       ],
     },
     {
       match: ({ url }) => url.includes('/api/hrms/leaves'),
-      title: 'Leave Application',
+      title: 'Leave Request',
       success: 'Leave request processed successfully.',
       messages: [
-        'Validating Leave Details...',
-        'Submitting Leave Application...',
+        'Checking leave details...',
+        'Submitting Leave Request...',
         'Updating Leave Balance...',
-        'Syncing HR Record...',
+        'Updating leave record...',
       ],
     },
     {
       match: ({ url }) => url.includes('/export') || url.includes('/csv') || url.includes('/excel') || url.includes('/pdf'),
-      title: 'Report Generation',
+      title: 'Preparing Report',
       success: 'Report generated successfully.',
       messages: [
-        'Preparing Report Data...',
-        'Generating Export File...',
-        'Packaging Download...',
+        'Preparing report data...',
+        'Creating export file...',
+        'Preparing download...',
         'Finalizing Report...',
       ],
     },
     {
       match: ({ url }) => url.includes('/api/hrms') || url.includes('/api/work-sessions') || url.includes('/api/system-events'),
-      title: 'Dashboard Data Loading',
-      success: 'Dashboard data loaded successfully.',
+      title: 'Overview Data Loading',
+      success: 'Overview data loaded successfully.',
       messages: [
-        'Loading Analytics...',
+        'Loading reports and insights...',
         'Fetching Latest Records...',
-        'Processing Database Results...',
-        'Updating Dashboard...',
+        'Preparing saved records...',
+        'Updating Overview...',
       ],
     },
   ];
@@ -98,10 +98,10 @@ const LoadingManager = (() => {
     title: 'Processing Request',
     success: 'Process completed successfully.',
     messages: [
-      'Preparing Request...',
-      'Processing Database Operation...',
-      'Syncing Securely...',
-      'Finalizing Process...',
+      'Preparing your request...',
+      'Saving your request...',
+      'Saving securely...',
+      'Finishing up...',
     ],
   };
 
@@ -151,9 +151,9 @@ const LoadingManager = (() => {
           </div>
         </div>
         <div class="global-loader-copy">
-          <p class="global-loader-kicker">Secure Cloud Processing</p>
+          <p class="global-loader-kicker">Secure Processing</p>
           <h2 id="global-loader-title">Processing Request</h2>
-          <p class="global-loader-message">Preparing Request...</p>
+          <p class="global-loader-message">Preparing your request...</p>
           <div class="global-loader-bar" aria-hidden="true"><span></span></div>
           <p class="global-loader-eta">Less than 10 seconds remaining</p>
         </div>
@@ -275,7 +275,7 @@ const LoadingManager = (() => {
     stopTimers();
     setProgress(100);
     setState('success');
-    ui.title.textContent = 'Process Completed Successfully';
+    ui.title.textContent = 'Done';
     updateMessage(message || currentProfile.success || fallbackProfile.success);
     ui.eta.textContent = 'Finalizing process...';
     hideTimer = window.setTimeout(() => hideLoader(), 850);
@@ -285,7 +285,7 @@ const LoadingManager = (() => {
     const ui = ensureElements();
     stopTimers();
     setState('error');
-    ui.title.textContent = 'Process Failed';
+    ui.title.textContent = 'Request Failed';
     updateMessage(message || 'Network connection lost.');
     ui.eta.textContent = 'Please check the details and try again.';
     retryHandler = options.retry || retryHandler;
@@ -486,30 +486,30 @@ function inferFormLoader(form) {
   if (action.includes('logout') || text.includes('logout')) {
     return {
       title: 'Logout',
-      message: 'Closing Secure Session...',
+      message: 'Closing Secure Sign In...',
       success: 'Logged out successfully.',
     };
   }
 
   if (action.includes('login') || text.includes('login')) {
     return {
-      title: 'Login Authentication',
-      message: 'Authenticating Credentials...',
-      success: 'Login completed successfully.',
+      title: 'Sign In',
+      message: 'Checking your sign-in details...',
+      success: 'Sign In completed successfully.',
     };
   }
 
   if (action.includes('signup') || action.includes('register')) {
     return {
       title: 'Employee Registration',
-      message: 'Creating Secure Account...',
+      message: 'Creating your account...',
       success: 'Account created successfully.',
     };
   }
 
   return {
     title: 'Processing Request',
-    message: 'Submitting Secure Request...',
+    message: 'Submitting your request...',
     success: 'Process completed successfully.',
   };
 }
@@ -540,7 +540,7 @@ document.addEventListener('click', (event) => {
 
   LoadingManager.showLoader({
     title: 'Data Export',
-    message: 'Preparing Report Data...',
+    message: 'Preparing report data...',
     success: 'Export generated successfully.',
   });
   window.setTimeout(() => LoadingManager.complete('Export generated successfully.'), 1200);
@@ -564,7 +564,7 @@ function renderStudents(students) {
     const row = document.createElement('tr');
     const cell = document.createElement('td');
     cell.colSpan = 5;
-    cell.textContent = 'No employees added yet.';
+    cell.textContent = 'No employees registered yet.';
     row.appendChild(cell);
     tableBody.appendChild(row);
     return;
@@ -677,7 +677,7 @@ function renderSystemEvents(events) {
 
   if (!events.length) {
     const item = document.createElement('div');
-    item.innerHTML = '<span class="event-dot"></span><strong>No system event captured yet</strong><p>Waiting for Windows activity monitor payloads.</p>';
+    item.innerHTML = '<span class="event-dot"></span><strong>No activity recorded yet</strong><p>Waiting for device activity updates.</p>';
     tableBody.appendChild(item);
     return;
   }
@@ -689,7 +689,7 @@ function renderSystemEvents(events) {
     item.innerHTML = `
       <span class="event-dot"></span>
       <strong>${event.user || 'Unknown'} · ${event.event}</strong>
-      <p>${new Date(event.occurredAt).toLocaleString()} · ${event.meaning || event.provider || event.sourceLog || '-'} · Event ID ${event.eventId || '-'}</p>
+      <p>${new Date(event.occurredAt).toLocaleString()} · ${event.meaning || event.provider || event.sourceLog || '-'} · Activity ID ${event.eventId || '-'}</p>
     `;
     tableBody.appendChild(item);
   });
@@ -799,7 +799,7 @@ function renderEmployeeSessionEvents(session) {
   list.innerHTML = '';
 
   if (!events.length) {
-    list.innerHTML = '<div><span class="event-dot"></span><strong>Waiting for attendance</strong><p>Events like Laptop Started, Screen Unlocked, Chrome Opened, and Attendance Marked will appear here.</p></div>';
+    list.innerHTML = '<div><span class="event-dot"></span><strong>Waiting for attendance</strong><p>Work activity such as device start, screen unlock, app use, and attendance will appear here.</p></div>';
     return;
   }
 
@@ -809,7 +809,7 @@ function renderEmployeeSessionEvents(session) {
     item.innerHTML = `
       <span class="event-dot"></span>
       <strong>${event.type || 'Activity'}</strong>
-      <p>${new Date(event.occurredAt).toLocaleString()} · ${event.message || event.deviceInfo || event.category || 'Live activity event'}</p>
+      <p>${new Date(event.occurredAt).toLocaleString()} · ${event.message || event.deviceInfo || event.category || 'Live activity update'}</p>
     `;
     list.appendChild(item);
   });
@@ -831,9 +831,9 @@ function renderEmployeeSession(data) {
   if (detail) {
     detail.textContent = session
       ? session.status === 'checked_out'
-        ? 'Monitoring is stopped for the remaining day.'
-        : 'Monitoring active for today.'
-      : 'Mark attendance to begin tracking.';
+        ? 'Device tracking is stopped for the rest of the day.'
+        : 'Device tracking is active today.'
+      : 'Mark attendance to start your workday.';
   }
 
   if (dot) {
@@ -1149,8 +1149,8 @@ function friendlyFaceMessage(message = '', stage = '') {
   if (text.includes('turned') || text.includes('angle')) return { icon: 'fa-face-smile', mode: 'warning', text: 'Please look directly at the camera.' };
   if (text.includes('camera')) return { icon: 'fa-video-slash', mode: 'error', text: 'Camera access is required.' };
   if (text.includes('liveness')) return { icon: 'fa-eye', mode: 'warning', text: 'Please blink or move naturally.' };
-  if (text.includes('not recognized') || text.includes('low confidence')) return { icon: 'fa-circle-exclamation', mode: 'error', text: 'We could not verify your identity.' };
-  if (text.includes('failed') || text.includes('unavailable')) return { icon: 'fa-rotate-right', mode: 'error', text: 'Recognition failed. Please try again.' };
+  if (text.includes('not recognized') || text.includes('low match accuracy')) return { icon: 'fa-circle-exclamation', mode: 'error', text: 'We could not verify your identity.' };
+  if (text.includes('failed') || text.includes('unavailable')) return { icon: 'fa-rotate-right', mode: 'error', text: 'Face scan failed. Please try again.' };
   return { icon: 'fa-circle-info', mode: 'info', text: message || 'Please keep your face centered inside the frame.' };
 }
 
@@ -1180,7 +1180,7 @@ function positionFaceBox(boxId, box, canvas) {
 
 function updateAttendanceScannerTelemetry(response, canvas, frameMetrics) {
   const confidence = Number(response?.recognition?.confidence || response?.confidence || 0);
-  updateText('attendance-confidence', `Confidence ${(confidence * 100).toFixed(1)}%`);
+  updateText('attendance-confidence', `Match Accuracy ${(confidence * 100).toFixed(1)}%`);
   updateText('attendance-light-state', response?.quality?.brightness?.message || frameMetrics?.brightnessLabel || 'Lighting stable');
   updateText('attendance-quality-state', response?.quality?.blur?.message || frameMetrics?.qualityLabel || 'Frame sharp');
   updateText('attendance-face-state', response?.box || response?.recognition?.box ? 'Face Detected' : 'Searching Face');
@@ -1200,7 +1200,7 @@ function setRecognitionResult(message, isSuccess = null, studentName = null, con
     if (isSuccess) {
       const confidencePercent = confidence ? (Number(confidence) * 100).toFixed(1) : 'N/A';
       const displayMsg = studentName
-        ? `Success: ${studentName}'s attendance was marked successfully. (${confidencePercent}% confidence)`
+        ? `Success: ${studentName}'s attendance was marked successfully. (${confidencePercent}% match accuracy)`
         : 'Success: Attendance was marked successfully.';
       renderFeedbackMessage(result, { icon: 'fa-circle-check', mode: 'success', text: displayMsg });
       result.classList.add('status-success');
@@ -1386,7 +1386,7 @@ async function startLiveCamera() {
   }
 
   if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-    setScanStatus('Camera API is not available.');
+    setScanStatus('Camera access is not available.');
     setRecognitionResult('Camera access is required.', false);
     return;
   }
@@ -1410,7 +1410,7 @@ async function startLiveCamera() {
     video.srcObject = cameraStream;
     await video.play();
 
-    setScanStatus('Camera is live. Real-time face scan started.');
+    setScanStatus('Camera is live. Live face scan started.');
     setScannerState('attendance-scanner-state', 'Detecting Face', 'scanning');
     setRecognitionResult('Live recognition is ready. Center your face inside the scanner.');
     getAttendanceLocation(true);
@@ -1499,7 +1499,7 @@ async function startEnrollmentCamera() {
   }
 
   if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-    setEnrollmentCameraStatus('Camera API is not available. Open this page at http://localhost:3000.');
+    setEnrollmentCameraStatus('Camera access is not available. Open this page at http://localhost:3000.');
     return;
   }
 
@@ -1602,7 +1602,7 @@ async function captureEnrollmentSamples() {
     await new Promise((resolve) => window.setTimeout(resolve, 260));
   }
 
-  setEnrollmentSampleStatus('Face samples are ready. Secure biometric upload can begin.');
+  setEnrollmentSampleStatus('Face photos are ready. Secure upload can begin.');
   updateSignupBiometricProgress(100, 6);
   if (faceValidation) {
     faceValidation.textContent = 'Face validation passed';
@@ -1746,7 +1746,7 @@ if (realtimeSystemEventsToggle) {
     if (realtimeSystemEventsToggle.checked) {
       refreshSystemEvents().catch((error) => showToast(error.message));
       systemEventsRefreshTimer = window.setInterval(refreshSystemEvents, 30000);
-      showToast('Real-time system events enabled.');
+      showToast('Live system events enabled.');
       return;
     }
 
@@ -1754,7 +1754,7 @@ if (realtimeSystemEventsToggle) {
       window.clearInterval(systemEventsRefreshTimer);
       systemEventsRefreshTimer = null;
     }
-    showToast('Real-time system events paused.');
+    showToast('Live system events paused.');
   });
 }
 
@@ -1837,7 +1837,7 @@ if (joinWorkForm) {
         body: JSON.stringify({ dailyPlan }),
       });
       if (status) status.textContent = data.message;
-      showToast('Work session started successfully.', 'success');
+      showToast('Workday started successfully.', 'success');
       joinWorkModal.hidden = true;
       joinWorkForm.reset();
       await loadDailyWorkSession();
@@ -2151,9 +2151,9 @@ if (forgotPasswordForm) {
       return;
     }
     if (status) {
-      status.textContent = `OTP request recorded for ${email}. Connect SMTP/OTP provider to send real email codes.`;
+      status.textContent = `Reset code request recorded for ${email}. Connect an email service to send real reset codes.`;
     }
-    showToast('OTP recovery request submitted.');
+    showToast('Password recovery request submitted.');
   });
 }
 
@@ -2234,7 +2234,7 @@ if (signupForm) {
     if (submitButton) submitButton.disabled = true;
     if (status) {
       status.textContent = enrollmentImages.length >= 6
-        ? 'Secure biometric upload, encryption, AI verification, and account activation are in progress...'
+        ? 'Secure face photo upload and account setup are in progress...'
         : 'Creating employee account with password login. Face login can be enabled later.';
     }
     if (enrollmentImages.length >= 6) {
@@ -2257,7 +2257,7 @@ if (signupForm) {
       showToast(data.modelWarning
         ? 'Employee signup complete. Model rebuild needs attention.'
         : enrollmentImages.length >= 6
-          ? 'Employee biometric signup complete.'
+          ? 'Employee face registration is complete.'
           : 'Employee account created.');
       window.location.href = data.redirectTo || '/employee';
     } catch (error) {
@@ -2285,7 +2285,7 @@ function setEmployeeFaceLoginStatus(message, isError = false) {
 function setEmployeeLoginConfidence(confidence) {
   const element = document.getElementById('employee-login-confidence');
   if (element) {
-    element.textContent = `Confidence ${(Number(confidence || 0) * 100).toFixed(1)}%`;
+    element.textContent = `Match Accuracy ${(Number(confidence || 0) * 100).toFixed(1)}%`;
   }
 }
 
@@ -2340,16 +2340,16 @@ async function scanEmployeeFaceLogin() {
 
     updateEmployeeLoginTelemetry(data, canvas, frameMetrics);
     if (!data.recognized) {
-      if (state) state.textContent = data.stage === 'no_face' ? 'Center face' : 'Low confidence';
+      if (state) state.textContent = data.stage === 'no_face' ? 'Center face' : 'Low match accuracy';
       setScannerState('employee-login-scanner-state', data.stage === 'no_face' ? 'Center Face' : 'Face Not Recognized', 'error');
       setEmployeeFaceLoginStatus(friendlyFaceMessage(data.message || 'Face not recognized.', data.stage).text, true);
       return;
     }
 
-    if (state) state.textContent = 'Login success';
+    if (state) state.textContent = 'Sign In success';
     setScannerState('employee-login-scanner-state', 'Verified Successfully', 'success');
-    setEmployeeFaceLoginStatus(`Login success. Welcome ${data.employee?.name || 'Employee'}.`);
-    showToast('Face authentication successful.');
+    setEmployeeFaceLoginStatus(`Sign In success. Welcome ${data.employee?.name || 'Employee'}.`);
+    showToast('Face sign-in successful.');
     window.setTimeout(() => {
       window.location.href = data.redirectTo || '/employee';
     }, 800);
@@ -2357,7 +2357,7 @@ async function scanEmployeeFaceLogin() {
     if (state) state.textContent = 'Face not recognized';
     setEmployeeLoginConfidence(0);
     setScannerState('employee-login-scanner-state', 'Scan Failed', 'error');
-    setEmployeeFaceLoginStatus(error.message || 'Recognition failed. Please try again.', true);
+    setEmployeeFaceLoginStatus(error.message || 'Face scan failed. Please try again.', true);
   } finally {
     employeeLoginInFlight = false;
   }
@@ -2370,7 +2370,7 @@ async function startEmployeeFaceLogin() {
   }
 
   if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-    setEmployeeFaceLoginStatus('Camera API is not available in this browser.', true);
+    setEmployeeFaceLoginStatus('Camera access is not available in this browser.', true);
     return;
   }
 
@@ -2393,7 +2393,7 @@ async function startEmployeeFaceLogin() {
     video.srcObject = employeeLoginStream;
     await video.play();
     setScannerState('employee-login-scanner-state', 'Detecting Face', 'scanning');
-    setEmployeeFaceLoginStatus('Webcam active. Real-time face matching started.');
+    setEmployeeFaceLoginStatus('Camera is on. Face matching has started.');
     employeeLoginInterval = window.setInterval(scanEmployeeFaceLogin, 1400);
     window.setTimeout(scanEmployeeFaceLogin, 450);
   } catch (error) {
@@ -2455,7 +2455,7 @@ function activateEmployeeAuthTab(tabName, options = {}) {
   });
 
   if (tabName === 'face') {
-    setEmployeeFaceLoginStatus('Opening secure camera. Center your face when the preview appears.');
+    setEmployeeFaceLoginStatus('Opening the camera. Center your face when the preview appears.');
     if (options.startFace !== false) {
       startEmployeeFaceLogin();
     }
@@ -2464,8 +2464,8 @@ function activateEmployeeAuthTab(tabName, options = {}) {
 
   stopEmployeeFaceLogin();
   setEmployeeLoginConfidence(0);
-  updateText('employee-login-state', 'Liveness Ready');
-  setScannerState('employee-login-scanner-state', 'Camera Ready');
+  updateText('employee-login-state', 'Real person check ready');
+  setScannerState('employee-login-scanner-state', 'Camera ready');
 }
 
 document.querySelectorAll('[data-auth-tab]').forEach((tab) => {
@@ -2513,11 +2513,11 @@ document.querySelectorAll('.show-password-toggle').forEach((toggle) => {
   });
 });
 
-const employeePasswordLoginForm = document.getElementById('employee-password-login-form');
-if (employeePasswordLoginForm) {
-  employeePasswordLoginForm.addEventListener('submit', (event) => {
-    const identifier = employeePasswordLoginForm.querySelector('[name="email"]')?.value.trim() || '';
-    const password = employeePasswordLoginForm.querySelector('[name="password"]')?.value || '';
+const employeePasswordSignInForm = document.getElementById('employee-password-login-form');
+if (employeePasswordSignInForm) {
+  employeePasswordSignInForm.addEventListener('submit', (event) => {
+    const identifier = employeePasswordSignInForm.querySelector('[name="email"]')?.value.trim() || '';
+    const password = employeePasswordSignInForm.querySelector('[name="password"]')?.value || '';
     const status = document.getElementById('employee-login-form-status');
 
     if (!identifier || !password) {
@@ -2563,8 +2563,51 @@ if (mobileMenuToggle && navbarMenu) {
 
 const sideNav = document.querySelector('.side-nav');
 if (mobileMenuToggle && sideNav) {
+  let sideNavBackdrop = document.querySelector('.side-nav-backdrop');
+  if (!sideNavBackdrop) {
+    sideNavBackdrop = document.createElement('button');
+    sideNavBackdrop.type = 'button';
+    sideNavBackdrop.className = 'side-nav-backdrop';
+    sideNavBackdrop.setAttribute('aria-label', 'Close navigation');
+    document.body.appendChild(sideNavBackdrop);
+  }
+
+  const closeSideNav = () => {
+    sideNav.classList.remove('open');
+    sideNavBackdrop.classList.remove('open');
+    document.body.classList.remove('nav-drawer-open');
+    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+  };
+
+  const openSideNav = () => {
+    sideNav.classList.add('open');
+    sideNavBackdrop.classList.add('open');
+    document.body.classList.add('nav-drawer-open');
+    mobileMenuToggle.setAttribute('aria-expanded', 'true');
+  };
+
+  mobileMenuToggle.setAttribute('aria-controls', 'primary-side-navigation');
+  mobileMenuToggle.setAttribute('aria-expanded', 'false');
+  sideNav.id = sideNav.id || 'primary-side-navigation';
+
   mobileMenuToggle.addEventListener('click', () => {
-    sideNav.classList.toggle('open');
+    if (sideNav.classList.contains('open')) {
+      closeSideNav();
+    } else {
+      openSideNav();
+    }
+  });
+
+  sideNavBackdrop.addEventListener('click', closeSideNav);
+
+  sideNav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', closeSideNav);
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeSideNav();
+    }
   });
 }
 
@@ -2573,19 +2616,6 @@ const profileMenu = document.querySelector('.profile-menu');
 if (profileTrigger && profileMenu) {
   profileTrigger.addEventListener('click', () => {
     profileMenu.classList.toggle('open');
-  });
-}
-
-const themeToggle = document.querySelector('.theme-toggle');
-if (themeToggle) {
-  const savedTheme = localStorage.getItem('faceai-theme');
-  if (savedTheme === 'light') {
-    document.body.classList.add('light-mode');
-  }
-
-  themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('light-mode');
-    localStorage.setItem('faceai-theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
   });
 }
 
@@ -2626,7 +2656,7 @@ function renderEnhancedSystemEvents(events) {
 
   if (!events.length) {
     const item = document.createElement('div');
-    item.innerHTML = '<span class="event-dot"></span><strong>No system event captured yet</strong><p>Waiting for Windows activity monitor payloads.</p>';
+    item.innerHTML = '<span class="event-dot"></span><strong>No activity recorded yet</strong><p>Waiting for device activity updates.</p>';
     tableBody.appendChild(item);
     return;
   }
@@ -2835,7 +2865,7 @@ function enhanceTableSearch() {
   });
 }
 
-function initPerformanceDashboard() {
+function initPerformanceOverview() {
   const filterBar = document.getElementById('performance-filters');
   const rows = Array.from(document.querySelectorAll('.performance-filter-row'));
   if (!filterBar || !rows.length) {
@@ -2919,7 +2949,7 @@ function enhanceUiInteractions() {
   enhanceMetricCounters();
   enhanceButtonRipples();
   enhanceTableSearch();
-  initPerformanceDashboard();
+  initPerformanceOverview();
 }
 
 enhanceUiInteractions();
@@ -2949,7 +2979,7 @@ const NotificationCenter = (() => {
     const type = String(notification.type || 'General');
     if (type.includes('Leave Approved')) return { icon: 'fa-circle-check', tone: 'success' };
     if (type.includes('Leave Rejected')) return { icon: 'fa-circle-xmark', tone: 'error' };
-    if (['Attendance', 'Login Reminder', 'Checkout'].includes(type)) return { icon: 'fa-calendar-check', tone: 'warning' };
+    if (['Attendance', 'Sign In Reminder', 'Checkout'].includes(type)) return { icon: 'fa-calendar-check', tone: 'warning' };
     if (['Overtime', 'System Alert'].includes(type)) return { icon: 'fa-triangle-exclamation', tone: 'error' };
     if (['Daily Report', 'Leave Request'].includes(type)) return { icon: 'fa-clipboard-list', tone: 'success' };
     return { icon: 'fa-bell', tone: 'info' };

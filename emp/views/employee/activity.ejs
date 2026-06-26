@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Activity Logs | FaceAI Attend</title>
+  <title>My Activity History | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -14,17 +14,17 @@
     <%- include('partials/sidebar', { activePage: 'activity' }) %>
     <main class="workspace">
       <%- include('partials/topbar', { syncLabel: 'Activity logs' }) %>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Personal activity timeline</span><h1>My Activity Logs</h1><p>Review your personal login, logout, lock, unlock, sleep, wakeup, and system activity timeline.</p></div></section>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>My activity timeline</span><h1>My Activity History</h1><p>Review your sign-ins, sign-outs, screen locks, sleep mode, wakeups, and device activity.</p></div></section>
       <section class="metric-grid compact reveal">
-        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-right-to-bracket"></i></span><p>Login History</p><strong><%= safeEvents.filter((event) => ['Login', 'Logout'].includes(event.event)).length || 0 %></strong></div>
-        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-lock-open"></i></span><p>Lock/Unlock</p><strong><%= safeEvents.filter((event) => ['Lock', 'Unlock'].includes(event.event)).length || 0 %></strong></div>
-        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-bed"></i></span><p>Sleep/Wakeup</p><strong><%= safeEvents.filter((event) => ['Sleep', 'Wakeup'].includes(event.event)).length || 0 %></strong></div>
-        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-clock-rotate-left"></i></span><p>Total Events</p><strong><%= safeEvents.length %></strong></div>
+        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-right-to-bracket"></i></span><p>Sign In History</p><strong><%= safeEvents.filter((event) => ['Login', 'Logout'].includes(event.event)).length || 0 %></strong></div>
+        <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-lock-open"></i></span><p>Screen Lock/Unlock</p><strong><%= safeEvents.filter((event) => ['Lock', 'Unlock'].includes(event.event)).length || 0 %></strong></div>
+        <div class="metric-card"><span class="metric-icon violet"><i class="fa-solid fa-bed"></i></span><p>Sleep/Wake</p><strong><%= safeEvents.filter((event) => ['Sleep', 'Wakeup'].includes(event.event)).length || 0 %></strong></div>
+        <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-clock-rotate-left"></i></span><p>Total Activities</p><strong><%= safeEvents.length %></strong></div>
       </section>
       <section class="panel reveal" id="personal-events">
-        <div class="panel-header"><div><p class="eyebrow">Personal Activity Timeline</p><h2>My System Events</h2></div></div>
+        <div class="panel-header"><div><p class="eyebrow">My Activity Timeline</p><h2>My Activity History</h2></div></div>
         <div class="timeline-stream">
-          <% if (safeEvents.length === 0) { %><div><span class="event-dot"></span><strong>No personal events captured yet</strong><p>Startup, shutdown, login/logout, lock/unlock, sleep/wakeup events will appear here.</p></div><% } %>
+          <% if (safeEvents.length === 0) { %><div><span class="event-dot"></span><strong>No activity recorded yet</strong><p>Startup, shutdown, sign-in, sign-out, screen lock, sleep, and wake activity will appear here.</p></div><% } %>
           <% safeEvents.forEach((event) => { %><div><span class="event-dot"></span><strong><%= event.event %></strong><p><%= new Date(event.occurredAt).toLocaleString() %> - <%= event.meaning || event.sourceLog || 'System event' %></p></div><% }) %>
         </div>
       </section>

@@ -13,10 +13,10 @@
     <%- include('partials/admin-sidebar', { activePage: 'settings' }) %>
     <main class="workspace">
       <%- include('partials/admin-topbar', { searchId: 'settings-search', searchPlaceholder: 'Search settings', syncLabel: 'Admin settings' }) %>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Settings</span><h1>Settings</h1><p>Administrative route for account, notification, and system configuration entry points.</p></div></section>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Settings</span><h1>Settings</h1><p>Manage account, message, employee access, and activity settings from one place.</p></div></section>
       <section class="metric-grid compact reveal">
-        <a class="metric-card" href="/admin/notifications"><span class="metric-icon warning"><i class="fa-solid fa-bell"></i></span><p>Notification Settings</p><strong>Open</strong></a>
-        <a class="metric-card" href="/admin/system-events"><span class="metric-icon violet"><i class="fa-solid fa-timeline"></i></span><p>System Monitoring</p><strong>Open</strong></a>
+        <a class="metric-card" href="/admin/notifications"><span class="metric-icon warning"><i class="fa-solid fa-bell"></i></span><p>Message Settings</p><strong>Open</strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon violet"><i class="fa-solid fa-timeline"></i></span><p>Activity Tracking</p><strong>Open</strong></a>
         <a class="metric-card" href="/admin/employees"><span class="metric-icon info"><i class="fa-solid fa-users-gear"></i></span><p>Employee Access</p><strong>Open</strong></a>
       </section>
     </main>

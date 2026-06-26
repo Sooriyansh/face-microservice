@@ -15,14 +15,14 @@
     <aside class="side-nav">
       <a href="/admin/dashboard" class="brand-block"><span class="brand-mark"><i class="fa-solid fa-shield-halved"></i></span><span><strong>FaceAI</strong><small>HRMS Console</small></span></a>
       <nav class="side-menu">
-        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
+        <a href="/admin/dashboard"><i class="fa-solid fa-grid-2"></i>Overview</a>
         <a href="/admin/attendance"><i class="fa-solid fa-calendar-check"></i>Attendance</a>
         <a class="active" href="/admin/leave"><i class="fa-solid fa-calendar-minus"></i>Leave Requests</a>
         <a href="/admin/reports"><i class="fa-solid fa-clipboard-list"></i>Daily Reports</a>
         <a href="/admin/overtime"><i class="fa-solid fa-business-time"></i>Overtime</a>
-        <a href="/admin/system-events"><i class="fa-solid fa-timeline"></i>System Events</a>
+        <a href="/admin/system-events"><i class="fa-solid fa-timeline"></i>Activity History</a>
       </nav>
-      <div class="rbac-card"><span class="security-badge">Admin role</span><p>Approve leave, review remarks, and export HR reports.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
+      <div class="rbac-card"><span class="security-badge">Admin access</span><p>Approve leave, review remarks, and export HR reports.</p><form action="/logout" method="POST" class="logout-form"><button type="submit">Logout</button></form></div>
     </aside>
     <main class="workspace">
       <header class="topbar">
@@ -34,7 +34,7 @@
           <a class="btn btn-secondary" href="/api/hrms/admin/export/leaves/pdf"><i class="fa-solid fa-file-pdf"></i>PDF</a>
         </div>
       </header>
-      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Leave analytics</span><h1>Leave Requests</h1><p>Review pending applications, approve or reject with remarks, and track department-wise leave patterns.</p></div></section>
+      <section class="page-hero reveal"><div><span class="status-chip"><span class="live-dot"></span>Leave summary</span><h1>Leave Requests</h1><p>Review leave requests, approve or reject them with notes, and track leave by department.</p></div></section>
       <section class="metric-grid compact reveal">
         <div class="metric-card"><span class="metric-icon"><i class="fa-solid fa-inbox"></i></span><p>Total Leave Requests</p><strong><%= stats.total %></strong></div>
         <div class="metric-card"><span class="metric-icon success"><i class="fa-solid fa-circle-check"></i></span><p>Approved Leaves</p><strong><%= stats.approved %></strong></div>
@@ -71,7 +71,7 @@
           </table>
         </div>
       </section>
-      <section class="panel reveal"><div class="panel-header"><div><p class="eyebrow">Department-wise leave statistics</p><h2>Leave Distribution</h2></div></div><div class="mini-chart-grid"><% Object.entries(stats.departmentStats || {}).forEach(([department, count]) => { %><div class="chart-tile"><strong><%= department %></strong><span style="--w:<%= Math.min(count * 18, 100) %>%"></span><small><%= count %> request(s)</small></div><% }) %></div></section>
+      <section class="panel reveal"><div class="panel-header"><div><p class="eyebrow">Leave by department</p><h2>Leave Distribution</h2></div></div><div class="mini-chart-grid"><% Object.entries(stats.departmentStats || {}).forEach(([department, count]) => { %><div class="chart-tile"><strong><%= department %></strong><span style="--w:<%= Math.min(count * 18, 100) %>%"></span><small><%= count %> request(s)</small></div><% }) %></div></section>
     </main>
   </div>
   <div class="toast-stack" id="toast-stack"></div>

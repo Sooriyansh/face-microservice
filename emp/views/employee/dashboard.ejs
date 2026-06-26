@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Employee Dashboard | FaceAI Attend</title>
+  <title>Employee Overview | FaceAI Attend</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/shared/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -21,36 +21,36 @@
       <section class="page-hero reveal">
         <div>
           <span class="status-chip"><span class="live-dot"></span> Employee overview</span>
-          <h1>Employee Dashboard</h1>
-          <p>Summary widgets and direct links to your attendance, enrollment, work session, leave, overtime, activity, and device pages.</p>
+          <h1>Employee Overview</h1>
+          <p>See your attendance, face registration, workday, leave, overtime, activity, and device information in one place.</p>
         </div>
       </section>
 
       <section class="metric-grid compact reveal">
         <a class="metric-card" href="/employee/attendance"><span class="metric-icon success"><i class="fa-solid fa-calendar-check"></i></span><p>My Attendance</p><strong><%= safeRecords.length %></strong></a>
-        <a class="metric-card" href="/employee/activity"><span class="metric-icon"><i class="fa-solid fa-right-to-bracket"></i></span><p>Login History</p><strong><%= safeEvents.filter((event) => ['Login', 'Logout'].includes(event.event)).length || 0 %></strong></a>
-        <a class="metric-card" href="/employee/work-session"><span class="metric-icon violet"><i class="fa-solid fa-satellite-dish"></i></span><p>Work Session</p><strong><%= safeWorkSession ? safeWorkSession.status.replace('_', ' ') : 'Pending' %></strong></a>
-        <a class="metric-card" href="/employee/enrollment"><span class="metric-icon"><i class="fa-solid fa-id-card-clip"></i></span><p>Enrollment</p><strong><%= safeEmployee && safeEmployee.enrollmentStatus ? safeEmployee.enrollmentStatus : 'Pending' %></strong></a>
+        <a class="metric-card" href="/employee/activity"><span class="metric-icon"><i class="fa-solid fa-right-to-bracket"></i></span><p>Sign In History</p><strong><%= safeEvents.filter((event) => ['Login', 'Logout'].includes(event.event)).length || 0 %></strong></a>
+        <a class="metric-card" href="/employee/work-session"><span class="metric-icon violet"><i class="fa-solid fa-satellite-dish"></i></span><p>Workday</p><strong><%= safeWorkSession ? safeWorkSession.status.replace('_', ' ') : 'Pending' %></strong></a>
+        <a class="metric-card" href="/employee/enrollment"><span class="metric-icon"><i class="fa-solid fa-id-card-clip"></i></span><p>Face Registration</p><strong><%= safeEmployee && safeEmployee.enrollmentStatus ? safeEmployee.enrollmentStatus : 'Pending' %></strong></a>
       </section>
 
       <section class="dashboard-grid reveal">
         <article class="panel">
-          <div class="panel-header split"><div><p class="eyebrow">Navigation</p><h2>Employee modules</h2></div><span class="panel-badge">Multi-page</span></div>
+          <div class="panel-header split"><div><p class="eyebrow">Navigation</p><h2>Employee tools</h2></div><span class="panel-badge">More tools</span></div>
           <div class="metric-grid compact">
             <a class="metric-card" href="/employee/attendance"><span class="metric-icon success"><i class="fa-solid fa-camera"></i></span><p>Mark Attendance</p><strong>Open</strong></a>
-            <a class="metric-card" href="/employee/enrollment"><span class="metric-icon"><i class="fa-solid fa-id-card-clip"></i></span><p>Identity Enrollment</p><strong>Open</strong></a>
-            <a class="metric-card" href="/employee/work-session"><span class="metric-icon violet"><i class="fa-solid fa-satellite-dish"></i></span><p>Daily Work Session</p><strong>Open</strong></a>
-            <a class="metric-card" href="/employee/leave"><span class="metric-icon warning"><i class="fa-solid fa-calendar-minus"></i></span><p>Leave Management</p><strong>Open</strong></a>
-            <a class="metric-card" href="/employee/overtime"><span class="metric-icon violet"><i class="fa-solid fa-business-time"></i></span><p>Overtime Tracking</p><strong>Open</strong></a>
-            <a class="metric-card" href="/employee/activity"><span class="metric-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><p>My Activity Logs</p><strong>Open</strong></a>
+            <a class="metric-card" href="/employee/enrollment"><span class="metric-icon"><i class="fa-solid fa-id-card-clip"></i></span><p>Face Registration</p><strong>Open</strong></a>
+            <a class="metric-card" href="/employee/work-session"><span class="metric-icon violet"><i class="fa-solid fa-satellite-dish"></i></span><p>Daily Workday</p><strong>Open</strong></a>
+            <a class="metric-card" href="/employee/leave"><span class="metric-icon warning"><i class="fa-solid fa-calendar-minus"></i></span><p>Leave Requests</p><strong>Open</strong></a>
+            <a class="metric-card" href="/employee/overtime"><span class="metric-icon violet"><i class="fa-solid fa-business-time"></i></span><p>Overtime Hours</p><strong>Open</strong></a>
+            <a class="metric-card" href="/employee/activity"><span class="metric-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><p>My Activity History</p><strong>Open</strong></a>
           </div>
         </article>
         <aside class="panel">
           <div class="panel-header"><div><p class="eyebrow">Current status</p><h2>Today</h2></div></div>
           <div class="status-stack">
-            <div><span class="live-dot"></span><strong>Attendance</strong><p><%= safeRecords.length ? 'Recent attendance available' : 'Pending face recognition' %></p></div>
-            <div><span class="live-dot"></span><strong>Work Session</strong><p><%= safeWorkSession ? safeWorkSession.status.replace('_', ' ') : 'Not started' %></p></div>
-            <div><span class="live-dot"></span><strong>Activity Logs</strong><p><%= safeEvents.length %> personal event(s)</p></div>
+            <div><span class="live-dot"></span><strong>Attendance</strong><p><%= safeRecords.length ? 'Recent attendance available' : 'Waiting for face scan' %></p></div>
+            <div><span class="live-dot"></span><strong>Workday</strong><p><%= safeWorkSession ? safeWorkSession.status.replace('_', ' ') : 'Not started' %></p></div>
+            <div><span class="live-dot"></span><strong>Activity History</strong><p><%= safeEvents.length %> activity record(s)</p></div>
             <div><span class="live-dot"></span><strong>Device</strong><p>Open device page for details</p></div>
           </div>
         </aside>
