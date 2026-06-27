@@ -29,6 +29,17 @@ function assertConfigured() {
   }
 }
 
+function getImageDeliveryUrl(publicId) {
+  if (!publicId || !isConfigured()) {
+    return '';
+  }
+
+  return cloudinary.url(publicId, {
+    resource_type: 'image',
+    secure: true,
+  });
+}
+
 function uploadImageBuffer(buffer, options) {
   assertConfigured();
 
@@ -72,6 +83,7 @@ async function deleteImages(publicIds) {
 
 module.exports = {
   deleteImages,
+  getImageDeliveryUrl,
   isConfigured,
   uploadImageBuffer,
 };

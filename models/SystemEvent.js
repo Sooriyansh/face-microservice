@@ -40,10 +40,40 @@ const systemEventSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    employee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Student',
+      default: null,
+      index: true,
+    },
+    employeeId: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true,
+    },
+    employeeName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     user: {
       type: String,
       default: '',
       trim: true,
+    },
+    durationMs: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: String,
+      default: 'Recorded',
+      trim: true,
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     message: {
       type: String,
@@ -63,5 +93,7 @@ const systemEventSchema = new mongoose.Schema(
 );
 
 systemEventSchema.index({ event: 1, occurredAt: -1 });
+systemEventSchema.index({ employee: 1, occurredAt: -1 });
+systemEventSchema.index({ user: 1, occurredAt: -1 });
 
 module.exports = mongoose.model('SystemEvent', systemEventSchema);

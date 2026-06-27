@@ -1,10 +1,14 @@
 import argparse
+import atexit
+import ctypes
+import json
 import os
 import platform
 import socket
 import sys
 import time
-from datetime import timezone
+from datetime import datetime, timezone
+from pathlib import Path
 
 import requests
 
@@ -74,12 +78,100 @@ SECURITY_EVENT_MAP = {
         "meaning": "User logout",
         "providers": {"Microsoft-Windows-Security-Auditing"},
     },
+    4778: {
+        "event": "User Session Start",
+        "meaning": "User session reconnected",
+        "providers": {"Microsoft-Windows-Security-Auditing"},
+    },
+    4779: {
+        "event": "User Session End",
+        "meaning": "User session disconnected",
+        "providers": {"Microsoft-Windows-Security-Auditing"},
+    },
 }
 
 LOG_CONFIG = {
     "System": SYSTEM_EVENT_MAP,
     "Security": SECURITY_EVENT_MAP,
 }
+
+
+class LASTINPUTINFO(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+
+
+class POINT(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+
+if platform.system() == "Windows":
+    USER32 = ctypes.windll.user32
+    KERNEL32 = ctypes.windll.kernel32
+else:
+    USER32 = None
+    KERNEL32 = None
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+def current_user():
+    domain = os.getenv("USERDOMAIN", "")
+    username = os.getenv("USERNAME", "")
+    return f"{domain}\\{username}" if domain and username else username
+
+
+def default_state_file():
+    base = os.getenv("LOCALAPPDATA") or os.getenv("TEMP") or "."
+    return str(Path(base) / "EmployeeActivityMonitor" / "state.json")
+
+
+def load_state(path):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except Exception:
+        return {}
+
+
+def save_state(path, state):
+    try:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(state, handle, indent=2, sort_keys=True)
+    except Exception as error:
+        print(f"Could not save monitor state: {error}", file=sys.stderr)
+
+
+def get_idle_ms():
+    if not USER32 or not KERNEL32:
+        return 0
+    info = LASTINPUTINFO()
+    info.cbSize = ctypes.sizeof(LASTINPUTINFO)
+    if not USER32.GetLastInputInfo(ctypes.byref(info)):
+        return 0
+    elapsed = KERNEL32.GetTickCount() - info.dwTime
+    return max(int(elapsed), 0)
+
+
+def get_cursor_position():
+    if not USER32:
+        return None
+    point = POINT()
+    if USER32.GetCursorPos(ctypes.byref(point)):
+        return point.x, point.y
+    return None
+
+
+def keyboard_pressed():
+    if not USER32:
+        return False
+    # Polling high-level key state is intentionally lightweight; it avoids a global hook.
+    for virtual_key in range(8, 256):
+        if USER32.GetAsyncKeyState(virtual_key) & 0x8000:
+            return True
+    return False
 
 
 def event_id(raw_event_id):
@@ -206,18 +298,169 @@ def add_boot_event(events):
     return events
 
 
-def post_events(api_url, events):
+def base_event(args, event_name, meaning, occurred_at=None, duration_ms=0, status="Recorded", metadata=None):
+    occurred_at = occurred_at or utc_now()
+    millis = int(occurred_at.timestamp() * 1000)
+    computer = socket.gethostname()
+    employee_id = args.employee_id or os.getenv("EMPLOYEE_ID", "")
+    employee_name = args.employee_name or os.getenv("EMPLOYEE_NAME", "")
+    return {
+        "event": event_name,
+        "meaning": meaning,
+        "occurredAt": occurred_at.isoformat(),
+        "eventId": 0,
+        "sourceLog": "LiveMonitor",
+        "provider": "WindowsActivityCollector",
+        "recordNumber": None,
+        "computer": computer,
+        "employeeId": employee_id,
+        "employeeName": employee_name,
+        "user": current_user(),
+        "durationMs": max(int(duration_ms or 0), 0),
+        "status": status,
+        "message": meaning,
+        "metadata": metadata or {},
+        "externalId": f"live:{computer}:{event_name}:{millis}",
+    }
+
+
+class LiveActivityTracker:
+    def __init__(self, args):
+        self.args = args
+        self.state_path = args.state_file
+        self.state = load_state(self.state_path)
+        self.last_sample_at = utc_now()
+        self.last_cursor = get_cursor_position()
+        self.was_idle = bool(self.state.get("wasIdle", False))
+        self.display_off = bool(self.state.get("displayOff", False))
+        self.sleep_started_at = self.state.get("sleepStartedAt")
+
+    def persist(self):
+        self.state.update(
+            {
+                "wasIdle": self.was_idle,
+                "displayOff": self.display_off,
+                "lastSeenAt": utc_now().isoformat(),
+                "sleepStartedAt": self.sleep_started_at,
+            }
+        )
+        save_state(self.state_path, self.state)
+
+    def startup_events(self):
+        previous_seen = self.state.get("lastSeenAt")
+        events = [
+            base_event(self.args, "User Session Start", "Activity collector started for the Windows user session."),
+        ]
+        if previous_seen:
+            try:
+                gap_ms = int((utc_now() - datetime.fromisoformat(previous_seen)).total_seconds() * 1000)
+                if gap_ms > max(self.args.interval * 3000, 120000):
+                    events.append(
+                        base_event(
+                            self.args,
+                            "Wakeup",
+                            "Activity collector resumed after a gap. The device may have slept, restarted, or recovered from a crash.",
+                            duration_ms=gap_ms,
+                            status="Recovered",
+                            metadata={"previousSeenAt": previous_seen},
+                        )
+                    )
+            except Exception:
+                pass
+        return events
+
+    def shutdown_event(self):
+        return base_event(self.args, "User Session End", "Activity collector stopped for the Windows user session.", status="Stopped")
+
+    def sample(self):
+        now = utc_now()
+        elapsed_ms = max(int((now - self.last_sample_at).total_seconds() * 1000), 0)
+        idle_ms = get_idle_ms()
+        is_idle = idle_ms >= self.args.idle_threshold * 1000
+        cursor = get_cursor_position()
+        key_active = keyboard_pressed()
+        mouse_active = cursor is not None and self.last_cursor is not None and cursor != self.last_cursor
+        events = []
+
+        if mouse_active:
+            events.append(base_event(self.args, "Mouse Activity", "Mouse activity detected.", status="Active"))
+        if key_active:
+            events.append(base_event(self.args, "Keyboard Activity", "Keyboard activity detected.", status="Active"))
+
+        if is_idle:
+            events.append(
+                base_event(
+                    self.args,
+                    "Idle Time",
+                    "No keyboard or mouse activity detected.",
+                    duration_ms=elapsed_ms,
+                    status="Idle",
+                    metadata={"idleMs": idle_ms},
+                )
+            )
+        else:
+            events.append(
+                base_event(
+                    self.args,
+                    "Active Usage",
+                    "Keyboard or mouse activity detected in the sampling window.",
+                    duration_ms=elapsed_ms,
+                    status="Active",
+                    metadata={"idleMs": idle_ms},
+                )
+            )
+
+        if is_idle and not self.was_idle:
+            events.append(base_event(self.args, "Idle State", "Windows user session became idle.", status="Idle", metadata={"idleMs": idle_ms}))
+        if not is_idle and self.was_idle:
+            events.append(base_event(self.args, "Active State", "Windows user session became active.", status="Active", metadata={"idleMs": idle_ms}))
+
+        should_display_off = idle_ms >= self.args.display_off_threshold * 1000
+        if should_display_off and not self.display_off:
+            events.append(base_event(self.args, "Display Off", "Display considered off after extended user inactivity.", status="Display Off", metadata={"inferred": True, "idleMs": idle_ms}))
+        if not should_display_off and self.display_off:
+            events.append(base_event(self.args, "Display On", "Display considered on after user activity resumed.", status="Display On", metadata={"inferred": True, "idleMs": idle_ms}))
+
+        self.was_idle = is_idle
+        self.display_off = should_display_off
+        self.last_cursor = cursor
+        self.last_sample_at = now
+        self.persist()
+        return events
+
+
+def enrich_event_identity(events, args):
+    employee_id = args.employee_id or os.getenv("EMPLOYEE_ID", "")
+    employee_name = args.employee_name or os.getenv("EMPLOYEE_NAME", "")
+    for event in events:
+        event.setdefault("computer", socket.gethostname())
+        event["employeeId"] = event.get("employeeId") or employee_id
+        event["employeeName"] = event.get("employeeName") or employee_name
+        event["user"] = event.get("user") or current_user()
+        event.setdefault("durationMs", 0)
+        event.setdefault("status", "Recorded")
+        event.setdefault("metadata", {})
+    return events
+
+
+def post_events(api_url, events, collector_token=""):
     if not events:
         return {"received": 0, "inserted": 0}
 
-    response = requests.post(api_url, json={"events": events}, timeout=15)
+    headers = {}
+    if collector_token:
+        headers["x-collector-token"] = collector_token
+    response = requests.post(api_url, json={"events": events}, headers=headers, timeout=15)
     response.raise_for_status()
     return response.json()
 
 
-def run_once(api_url, max_records):
+def run_once(api_url, max_records, args, live_tracker=None):
     events = add_boot_event(read_windows_events(max_records))
-    result = post_events(api_url, events)
+    if live_tracker:
+        events.extend(live_tracker.sample())
+    events = enrich_event_identity(events, args)
+    result = post_events(api_url, events, args.collector_token or os.getenv("SYSTEM_EVENTS_COLLECTOR_TOKEN", ""))
     print(
         f"Sent {result.get('received', 0)} event(s), inserted {result.get('inserted', 0)} new event(s).",
         flush=True,
@@ -228,26 +471,55 @@ def main():
     parser = argparse.ArgumentParser(description="Monitor Windows system events and send them to the dashboard API.")
     parser.add_argument(
         "--api-url",
-        default="http://localhost:3000/api/system-events/ingest",
+        default="http://localhost:8080/api/system-events/ingest",
         help="Node API endpoint that stores system events.",
     )
     parser.add_argument("--interval", type=int, default=60, help="Polling interval in seconds.")
     parser.add_argument("--max-records", type=int, default=500, help="Recent records to scan per Windows log.")
     parser.add_argument("--once", action="store_true", help="Collect events once and exit.")
+    parser.add_argument("--employee-id", default=os.getenv("EMPLOYEE_ID", ""), help="Employee ID/roll number to attach to events.")
+    parser.add_argument("--employee-name", default=os.getenv("EMPLOYEE_NAME", ""), help="Employee name to attach to events.")
+    parser.add_argument("--collector-token", default=os.getenv("SYSTEM_EVENTS_COLLECTOR_TOKEN", ""), help="Trusted collector token for unattended ingestion.")
+    parser.add_argument("--idle-threshold", type=int, default=120, help="Seconds without input before the user is idle.")
+    parser.add_argument("--display-off-threshold", type=int, default=300, help="Seconds without input before display is treated as off.")
+    parser.add_argument("--state-file", default=default_state_file(), help="State file used to recover after sleep/restart/crash.")
     args = parser.parse_args()
 
     if platform.system() != "Windows":
         raise SystemExit("System event monitoring is available only on Windows.")
 
     if args.once:
-        run_once(args.api_url, args.max_records)
+        live_tracker = LiveActivityTracker(args)
+        events = enrich_event_identity(add_boot_event(read_windows_events(args.max_records)) + live_tracker.sample(), args)
+        result = post_events(args.api_url, events, args.collector_token)
+        print(f"Sent {result.get('received', 0)} event(s), inserted {result.get('inserted', 0)} new event(s).", flush=True)
         return
 
+    live_tracker = LiveActivityTracker(args)
+
+    shutdown_sent = False
+
+    def send_shutdown_event():
+        nonlocal shutdown_sent
+        if shutdown_sent:
+            return
+        shutdown_sent = True
+        try:
+            post_events(args.api_url, enrich_event_identity([live_tracker.shutdown_event()], args), args.collector_token)
+        except Exception:
+            pass
+
+    atexit.register(send_shutdown_event)
     print("Windows system event monitor started. Press Ctrl+C to stop.", flush=True)
+    try:
+        post_events(args.api_url, enrich_event_identity(live_tracker.startup_events(), args), args.collector_token)
+    except Exception as error:
+        print(f"Startup event error: {error}", file=sys.stderr, flush=True)
     while True:
         try:
-            run_once(args.api_url, args.max_records)
+            run_once(args.api_url, args.max_records, args, live_tracker)
         except KeyboardInterrupt:
+            send_shutdown_event()
             raise
         except Exception as error:
             print(f"Monitor error: {error}", file=sys.stderr, flush=True)

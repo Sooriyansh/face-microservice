@@ -1,6 +1,7 @@
 const WorkSession = require('../models/WorkSession');
 const DailyWorkReport = require('../models/DailyWorkReport');
 const SystemEvent = require('../models/SystemEvent');
+const Student = require('../models/Student');
 const { calculateSessionMetrics } = require('./hrms');
 const { notifyAdmins } = require('./notifications');
 
@@ -72,9 +73,67 @@ function normalizeEventType(type) {
     Unlock: 'Screen Unlock',
     Login: 'Login',
     Logout: 'Logout',
+    'Display On': 'Display On',
+    'Display Off': 'Display Off',
+    'User Session Start': 'User Session Start',
+    'User Session End': 'User Session End',
+    'Session Connect': 'User Session Start',
+    'Session Disconnect': 'User Session End',
   };
 
   return eventMap[type] || type || 'Activity';
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function resolveEmployee(rawEvent = {}) {
+  const objectId = String(rawEvent.employee || rawEvent.metadata?.employeeId || '').trim();
+  if (objectId.match(/^[a-f\d]{24}$/i)) {
+    const employee = await Student.findById(objectId).lean();
+    if (employee) return employee;
+  }
+
+  const candidates = [
+    rawEvent.employeeId,
+    rawEvent.metadata?.employeeCode,
+    rawEvent.employeeName,
+    rawEvent.metadata?.employeeName,
+    rawEvent.user,
+  ].map((value) => String(value || '').trim()).filter(Boolean);
+
+  for (const candidate of candidates) {
+    const userPart = candidate.includes('\\') ? candidate.split('\\').pop() : candidate;
+    const emailCandidate = userPart.includes('@') ? userPart.toLowerCase() : '';
+    const employee = await Student.findOne({
+      $or: [
+        { rollNumber: candidate },
+        { rollNumber: userPart },
+        ...(emailCandidate ? [{ email: emailCandidate }] : []),
+        { name: new RegExp(`^${escapeRegex(candidate)}$`, 'i') },
+        { name: new RegExp(escapeRegex(userPart.replace(/[._-]+/g, ' ')), 'i') },
+      ],
+    }).lean();
+    if (employee) return employee;
+  }
+
+  return null;
+}
+
+function hasDuplicateSessionEvent(session, rawEvent, type, occurredAt) {
+  const externalId = rawEvent.externalId || rawEvent.metadata?.externalId;
+  if (externalId && (session.events || []).some((event) => event.metadata?.externalId === externalId)) {
+    return true;
+  }
+
+  const occurredTime = occurredAt.getTime();
+  return (session.events || []).some((event) => {
+    const eventTime = event.occurredAt ? new Date(event.occurredAt).getTime() : 0;
+    return event.type === type
+      && Math.abs(eventTime - occurredTime) < 1000
+      && (event.deviceInfo || '') === (rawEvent.deviceInfo || formatDeviceInfo(rawEvent));
+  });
 }
 
 function calculateProductivityScore(session) {
@@ -247,21 +306,21 @@ async function recordTrackingEvent(rawEvent) {
   const occurredAt = rawEvent.occurredAt ? new Date(rawEvent.occurredAt) : new Date();
   const dateKey = getDateKey(occurredAt);
   const type = normalizeEventType(rawEvent.event || rawEvent.type);
-  const userPattern = rawEvent.user ? new RegExp(String(rawEvent.user).split(/[\\/@]/).pop(), 'i') : null;
+  const resolvedEmployee = await resolveEmployee(rawEvent);
   const query = {
     dateKey,
     status: { $nin: ['checked_out'] },
   };
 
-  if (rawEvent.employee) {
+  if (resolvedEmployee) {
+    query.employee = resolvedEmployee._id;
+  } else if (rawEvent.employee) {
     query.employee = rawEvent.employee;
+  } else {
+    return null;
   }
 
   let session = await WorkSession.findOne(query).populate('employee');
-  if ((!session || !session.employee) && userPattern) {
-    const candidates = await WorkSession.find(query).populate('employee');
-    session = candidates.find((candidate) => candidate.employee && userPattern.test(candidate.employee.name || '')) || null;
-  }
 
   if (!session || !session.employee) {
     return null;
@@ -275,24 +334,34 @@ async function recordTrackingEvent(rawEvent) {
     return null;
   }
 
+  if (hasDuplicateSessionEvent(session, rawEvent, type, occurredAt)) {
+    return session;
+  }
+
   const isAbruptShutdown = ['Shutdown', 'Unexpected Shutdown', 'Abrupt Shutdown'].includes(rawEvent.event || type);
+  const durationMs = Math.max(Number(rawEvent.durationMs || rawEvent.metadata?.durationMs || 0), 0);
   session.events.push({
     type,
     category: mapEventCategory(type),
     message: rawEvent.message || rawEvent.meaning || `${type} captured by the event collector.`,
     occurredAt,
     deviceInfo: rawEvent.deviceInfo || formatDeviceInfo(rawEvent),
-    metadata: rawEvent.metadata || {
+    metadata: {
+      ...(rawEvent.metadata || {}),
       eventId: rawEvent.eventId,
       sourceLog: rawEvent.sourceLog,
       externalId: rawEvent.externalId,
+      durationMs,
+      status: rawEvent.status,
     },
   });
-  session.lastActivityAt = occurredAt;
-  session.deviceState = ['Sleep Mode', 'Screen Lock'].includes(type) ? type : isAbruptShutdown ? 'Offline' : 'Online';
+  if (!['Idle Time', 'Idle State', 'Inactive Duration', 'Display Off', 'Sleep Mode', 'Screen Lock'].includes(type)) {
+    session.lastActivityAt = occurredAt;
+  }
+  session.deviceState = ['Sleep Mode', 'Screen Lock', 'Display Off'].includes(type) ? type : isAbruptShutdown ? 'Offline' : 'Online';
   session.status = isAbruptShutdown
     ? 'incomplete'
-    : ['Idle Time', 'Idle State'].includes(type)
+    : ['Idle Time', 'Idle State', 'Inactive Duration', 'Display Off', 'Screen Lock'].includes(type)
       ? 'idle'
       : type === 'Sleep Mode'
         ? 'sleep'
@@ -301,23 +370,28 @@ async function recordTrackingEvent(rawEvent) {
   session.productivityScore = calculateProductivityScore(session);
 
   if (type === 'Idle Time') {
-    session.idleMs += Number(rawEvent.durationMs || rawEvent.metadata?.durationMs || 0);
+    session.idleMs += durationMs;
   }
 
   if (type === 'Active Usage') {
-    session.activeMs += Number(rawEvent.durationMs || rawEvent.metadata?.durationMs || 0);
+    session.activeMs += durationMs;
   }
 
   if (type === 'Idle State') {
-    session.idleMs += Number(rawEvent.durationMs || rawEvent.metadata?.durationMs || 0);
+    session.idleMs += durationMs;
   }
 
   if (type === 'Active State') {
-    session.activeMs += Number(rawEvent.durationMs || rawEvent.metadata?.durationMs || 0);
+    session.activeMs += durationMs;
+  }
+
+  if (type === 'Inactive Duration') {
+    session.inactiveMs += durationMs;
+    session.idleMs += durationMs;
   }
 
   if (type === 'Sleep Mode') {
-    session.sleepMs += Number(rawEvent.durationMs || rawEvent.metadata?.durationMs || 0);
+    session.sleepMs += durationMs;
   }
 
   await session.save();

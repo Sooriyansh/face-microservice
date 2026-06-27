@@ -685,10 +685,11 @@ function renderSystemEvents(events) {
   events.forEach((event) => {
     const item = document.createElement('div');
     item.className = 'event-row';
-    item.setAttribute('data-user', event.user || 'Unknown');
+    const employeeName = event.employeeName || event.user || 'Unknown';
+    item.setAttribute('data-user', employeeName);
     item.innerHTML = `
       <span class="event-dot"></span>
-      <strong>${event.user || 'Unknown'} · ${event.event}</strong>
+      <strong>${employeeName} · ${event.event}</strong>
       <p>${new Date(event.occurredAt).toLocaleString()} · ${event.meaning || event.provider || event.sourceLog || '-'} · Activity ID ${event.eventId || '-'}</p>
     `;
     tableBody.appendChild(item);
@@ -2664,7 +2665,9 @@ function renderEnhancedSystemEvents(events) {
   events.forEach((event) => {
     const item = document.createElement('div');
     item.className = 'event-row';
-    item.setAttribute('data-user', event.user || 'Unknown');
+    const employeeName = event.employeeName || event.user || 'Unknown';
+    const duration = Number(event.durationMs || 0) > 0 ? formatShortDuration(event.durationMs) : '-';
+    item.setAttribute('data-user', employeeName);
     item.innerHTML = `
       <span class="event-dot"></span>
       <strong>${event.event || 'Activity Event'}</strong>
@@ -2672,9 +2675,9 @@ function renderEnhancedSystemEvents(events) {
         <span><b>Timestamp</b>${new Date(event.occurredAt).toLocaleString()}</span>
         <span><b>Event Type</b>${event.event || '-'}</span>
         <span><b>Device Info</b>${event.computer || event.provider || event.sourceLog || '-'}</span>
-        <span><b>Employee Name</b>${event.user || 'Unknown'}</span>
-        <span><b>Session Status</b>${['Shutdown', 'Unexpected Shutdown'].includes(event.event) ? 'Incomplete' : 'Monitoring'}</span>
-        <span><b>Duration</b>${event.event === 'Sleep' ? 'Tracked until wakeup' : '-'}</span>
+        <span><b>Employee Name</b>${employeeName}</span>
+        <span><b>Session Status</b>${event.status || (['Shutdown', 'Unexpected Shutdown'].includes(event.event) ? 'Incomplete' : 'Monitoring')}</span>
+        <span><b>Duration</b>${duration}</span>
       </div>
     `;
     tableBody.appendChild(item);

@@ -118,13 +118,21 @@ npm start
 Dusre terminal me:
 
 ```bash
-npm run py:system-events
+npm run py:system-events -- --api-url http://localhost:8080/api/system-events/ingest --collector-token <SYSTEM_EVENTS_COLLECTOR_TOKEN> --employee-id <employee-id> --employee-name "<employee name>"
 ```
 
 Dashboard:
 
 ```text
-http://localhost:3000/system-events
+http://localhost:8080/admin/system-events
+```
+
+`SYSTEM_EVENTS_COLLECTOR_TOKEN` ko `.env` me bhi same value se set karo. Monitor Windows Event Viewer ke saath live keyboard/mouse activity, active/idle duration, display on/off state, collector restart recovery, aur user session start/end bhi save karta hai.
+
+Windows restart/login ke baad monitor ko automatically start karne ke liye PowerShell as Administrator me:
+
+```powershell
+.\scripts\register-system-event-monitor.ps1 -CollectorToken "<SYSTEM_EVENTS_COLLECTOR_TOKEN>" -EmployeeId "<employee-id>" -EmployeeName "<employee name>"
 ```
 
 Yeh page daily 8:00 AM se current time tak ki activity chronological order me dikhata hai. 5:00 PM ke baad 8:00 AM se 5:00 PM tak ki complete saved activity dikhegi. Page har 30 seconds me auto-refresh hota hai, aur monitor Windows Event Viewer se naye events database me save karta rahega.

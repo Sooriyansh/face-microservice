@@ -9,12 +9,15 @@ const router = express.Router();
 
 function sendSystemEventsExport(res, type, rows) {
   const headers = [
-    { label: 'Employee', value: (row) => row.user || 'Unknown' },
+    { label: 'Employee ID', value: (row) => row.employeeId || '-' },
+    { label: 'Employee', value: (row) => row.employeeName || row.user || 'Unknown' },
     { label: 'Event', value: (row) => row.event },
     { label: 'Occurred At', value: (row) => new Date(row.occurredAt).toLocaleString() },
     { label: 'Meaning', value: (row) => row.meaning || row.message || '-' },
     { label: 'Source', value: (row) => row.sourceLog || row.provider || '-' },
     { label: 'Computer', value: (row) => row.computer || '-' },
+    { label: 'Status', value: (row) => row.status || 'Recorded' },
+    { label: 'Duration Ms', value: (row) => row.durationMs || 0 },
   ];
 
   if (type === 'pdf') {
@@ -50,6 +53,12 @@ const ALLOWED_EVENTS = new Set([
   'Keyboard Activity',
   'Mouse Activity',
   'Inactive Duration',
+  'Display On',
+  'Display Off',
+  'User Session Start',
+  'User Session End',
+  'Session Connect',
+  'Session Disconnect',
 ]);
 
 const WORKDAY_START_HOUR = 8;
@@ -108,10 +117,88 @@ function normalizeSystemEvent(rawEvent) {
     provider: String(rawEvent.provider || '').trim(),
     recordNumber: Number.isFinite(Number(rawEvent.recordNumber)) ? Number(rawEvent.recordNumber) : null,
     computer: String(rawEvent.computer || '').trim(),
+    employee: String(rawEvent.employee || rawEvent.employeeObjectId || '').match(/^[a-f\d]{24}$/i)
+      ? String(rawEvent.employee || rawEvent.employeeObjectId)
+      : null,
+    employeeId: String(rawEvent.employeeId || rawEvent.employeeCode || '').trim(),
+    employeeName: String(rawEvent.employeeName || '').trim(),
     user: String(rawEvent.user || '').trim(),
+    durationMs: Math.max(Number(rawEvent.durationMs || rawEvent.duration || 0), 0),
+    status: String(rawEvent.status || 'Recorded').trim(),
+    metadata: rawEvent.metadata && typeof rawEvent.metadata === 'object' ? rawEvent.metadata : {},
     message: String(rawEvent.message || '').trim().slice(0, 2000),
     externalId,
   };
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function compactOrQuery(clauses) {
+  return clauses.filter((clause) => {
+    const value = Object.values(clause)[0];
+    return value !== '' && value != null;
+  });
+}
+
+async function resolveEmployeeForEvent(event) {
+  const employeeObjectId = String(event.employee || '').trim();
+  if (employeeObjectId.match(/^[a-f\d]{24}$/i)) {
+    const employee = await Student.findById(employeeObjectId).lean();
+    if (employee) return employee;
+  }
+
+  const candidates = [
+    event.employeeId,
+    event.metadata?.employeeId,
+    event.metadata?.employeeCode,
+    event.employeeName,
+    event.metadata?.employeeName,
+    event.user,
+  ].map((value) => String(value || '').trim()).filter(Boolean);
+
+  for (const candidate of candidates) {
+    const userPart = candidate.includes('\\') ? candidate.split('\\').pop() : candidate;
+    const emailCandidate = userPart.includes('@') ? userPart.toLowerCase() : '';
+    const exact = await Student.findOne({
+      $or: [
+        { rollNumber: candidate },
+        { rollNumber: userPart },
+        ...(emailCandidate ? [{ email: emailCandidate }] : []),
+        { name: new RegExp(`^${escapeRegex(candidate)}$`, 'i') },
+      ],
+    }).lean();
+    if (exact) return exact;
+
+    const fuzzyName = userPart.replace(/[._-]+/g, ' ').trim();
+    if (fuzzyName) {
+      const fuzzy = await Student.findOne({ name: new RegExp(escapeRegex(fuzzyName), 'i') }).lean();
+      if (fuzzy) return fuzzy;
+    }
+  }
+
+  return null;
+}
+
+async function enrichEventsWithEmployees(events) {
+  return Promise.all(events.map(async (event) => {
+    const employee = await resolveEmployeeForEvent(event);
+    if (!employee) return event;
+    return {
+      ...event,
+      employee: employee._id,
+      employeeId: event.employeeId || employee.rollNumber || '',
+      employeeName: employee.name || event.employeeName || '',
+      user: event.user || employee.name || '',
+      metadata: {
+        ...event.metadata,
+        employeeId: String(employee._id),
+        employeeName: employee.name,
+        employeeCode: employee.rollNumber || '',
+      },
+    };
+  }));
 }
 
 router.get('/', async (req, res, next) => {
@@ -135,13 +222,14 @@ router.get('/', async (req, res, next) => {
       }
     }
     if (selectedUser) {
-      query.user = selectedUser;
+      query.$or = compactOrQuery([{ user: selectedUser }, { employeeName: selectedUser }, { employeeId: selectedUser }]);
     }
 
     if (req.user?.role === 'employee') {
       const employee = await Student.findOne({ email: req.user.email }).lean();
-      const firstName = employee ? String(employee.name || '').split(' ')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
-      query.user = firstName ? new RegExp(firstName, 'i') : /.^/;
+      query.$or = employee
+        ? compactOrQuery([{ employee: employee._id }, { employeeId: employee.rollNumber || '' }, { employeeName: employee.name || '' }, { user: employee.name || '' }])
+        : [{ user: /.^/ }];
     }
 
     const events = await SystemEvent.find(query)
@@ -179,7 +267,8 @@ router.get('/export/:type', async (req, res, next) => {
       if (to) query.occurredAt.$lte = to;
     }
     if (req.query.user) {
-      query.user = String(req.query.user);
+      const selectedUser = String(req.query.user);
+      query.$or = compactOrQuery([{ user: selectedUser }, { employeeName: selectedUser }, { employeeId: selectedUser }]);
     }
     const events = await SystemEvent.find(query).sort({ occurredAt: -1 }).limit(limit).lean();
     return sendSystemEventsExport(res, req.params.type, events);
@@ -205,7 +294,7 @@ router.get('/users/:userId/activity', async (req, res, next) => {
     const to = parseDateQuery(req.query.to) || workdayRange.end;
 
     const events = await SystemEvent.find({
-      user: userId,
+      $or: compactOrQuery([{ user: userId }, { employeeName: userId }, { employeeId: userId }, { employee: userId.match(/^[a-f\d]{24}$/i) ? userId : null }]),
       occurredAt: {
         $gte: from,
         $lte: to,
@@ -244,7 +333,7 @@ router.get('/users/:userId/activity', async (req, res, next) => {
 
 router.post('/ingest', async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
+    if (req.user?.role !== 'admin' && !req.trustedCollector) {
       return res.status(403).json({
         success: false,
         message: 'Only admin or trusted collectors can ingest system events.',
@@ -252,7 +341,7 @@ router.post('/ingest', async (req, res, next) => {
     }
 
     const payloadEvents = Array.isArray(req.body.events) ? req.body.events : [req.body];
-    const events = payloadEvents.map(normalizeSystemEvent).filter(Boolean);
+    const events = await enrichEventsWithEmployees(payloadEvents.map(normalizeSystemEvent).filter(Boolean));
 
     if (events.length === 0) {
       return res.status(400).json({

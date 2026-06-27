@@ -1,5 +1,17 @@
 function requireAuth(req, res, next) {
   if (req.user) return next();
+  const collectorToken = String(process.env.SYSTEM_EVENTS_COLLECTOR_TOKEN || '').trim();
+  const requestToken = String(req.get('x-collector-token') || '').trim()
+    || String(req.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (
+    collectorToken
+    && requestToken
+    && requestToken === collectorToken
+    && req.originalUrl.startsWith('/api/system-events/ingest')
+  ) {
+    req.trustedCollector = true;
+    return next();
+  }
   if (req.originalUrl.startsWith('/api/')) {
     return res.status(401).json({ success: false, message: 'Please login first.' });
   }
