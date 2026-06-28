@@ -26,20 +26,30 @@ def load_embeddings():
         raise RuntimeError("Embeddings file not found. Run train_model.py first.")
 
     data = np.load(EMBEDDINGS_PATH, allow_pickle=True)
-    return data["labels"], data["embeddings"]
+    labels = np.array([str(label) for label in data["labels"]])
+    embeddings = np.array(data["embeddings"], dtype=np.float32)
+    return labels, embeddings
 
 
 def find_best_match(embedding, labels, embeddings):
-    scores = np.array([cosine_similarity(embedding, stored) for stored in embeddings], dtype=np.float32)
+    unique_labels = sorted(set(str(label) for label in labels))
+    label_scores = []
+    for label in unique_labels:
+        label_embeddings = embeddings[labels == label]
+        scores_for_label = np.array([cosine_similarity(embedding, stored) for stored in label_embeddings], dtype=np.float32)
+        if len(scores_for_label) == 0:
+            continue
+        top_scores = np.sort(scores_for_label)[-min(3, len(scores_for_label)):]
+        label_scores.append((label, float(np.mean(top_scores)), float(np.max(scores_for_label))))
+
+    scores = np.array([score for _, score, _ in label_scores], dtype=np.float32)
     if len(scores) == 0:
         return None, 0.0, 0.0
     best_index = int(np.argmax(scores))
-    best_label = str(labels[best_index])
-    same_label_scores = scores[np.array([str(label) == best_label for label in labels])]
-    other_scores = scores[np.array([str(label) != best_label for label in labels])]
-    label_score = float(np.mean(np.sort(same_label_scores)[-min(3, len(same_label_scores)):]))
+    best_label, label_score, best_sample_score = label_scores[best_index]
+    other_scores = np.delete(scores, best_index)
     runner_up = float(np.max(other_scores)) if len(other_scores) else 0.0
-    return best_label, max(float(scores[best_index]), label_score), runner_up
+    return best_label, max(best_sample_score, label_score), runner_up
 
 
 def recognize_image(model, detector, profile_detector, labels, embeddings, image_path):

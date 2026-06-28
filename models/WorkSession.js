@@ -151,6 +151,19 @@ const workSessionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lateMs: {
+      type: Number,
+      default: 0,
+    },
+    lateByMinutes: {
+      type: Number,
+      default: 0,
+    },
+    lateStatus: {
+      type: String,
+      default: 'On Time',
+      trim: true,
+    },
     weekendMs: {
       type: Number,
       default: 0,

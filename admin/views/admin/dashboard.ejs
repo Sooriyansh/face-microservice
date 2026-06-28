@@ -16,6 +16,8 @@
     const latestAdminNotifications = typeof latestNotifications !== 'undefined' ? latestNotifications : [];
     const upcomingAdminLeaves = typeof upcomingLeaves !== 'undefined' ? upcomingLeaves : [];
     const safeRecentAttendance = typeof recentAttendance !== 'undefined' ? recentAttendance : [];
+    const activityCounts = typeof dashboardActivityCounts !== 'undefined' ? dashboardActivityCounts : {};
+    const faceEvents = typeof latestFaceRecognitionEvents !== 'undefined' ? latestFaceRecognitionEvents : safeRecentAttendance;
   %>
   <div class="enterprise-layout performance-dashboard">
     <%- include('partials/admin-sidebar', { activePage: 'dashboard' }) %>
@@ -47,6 +49,16 @@
         <a class="metric-card" href="/admin/leave"><span class="metric-icon warning"><i class="fa-solid fa-calendar-minus"></i></span><p>Upcoming Leaves</p><strong><%= upcomingAdminLeaves.length %></strong></a>
       </section>
 
+      <section class="metric-grid compact reveal">
+        <a class="metric-card" href="/admin/attendance"><span class="metric-icon success"><i class="fa-solid fa-calendar-day"></i></span><p>Today's Attendance</p><strong><%= activityCounts.todayAttendance || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon info"><i class="fa-solid fa-wifi"></i></span><p>Currently Online</p><strong><%= activityCounts.currentlyOnline || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon"><i class="fa-solid fa-power-off"></i></span><p>Offline Employees</p><strong><%= activityCounts.offline || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon success"><i class="fa-solid fa-laptop-code"></i></span><p>Working Employees</p><strong><%= activityCounts.working || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon warning"><i class="fa-solid fa-hourglass-half"></i></span><p>Idle Employees</p><strong><%= activityCounts.idle || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon violet"><i class="fa-solid fa-moon"></i></span><p>Sleeping Devices</p><strong><%= activityCounts.sleeping || 0 %></strong></a>
+        <a class="metric-card" href="/admin/system-events"><span class="metric-icon"><i class="fa-solid fa-right-from-bracket"></i></span><p>Checked-Out Employees</p><strong><%= activityCounts.checkedOut || 0 %></strong></a>
+      </section>
+
       <section class="dashboard-grid reveal">
         <article class="panel">
           <div class="panel-header split">
@@ -72,6 +84,26 @@
             <div><i class="fa-solid fa-bell"></i><span>Admin notifications</span><strong><%= latestAdminNotifications.length %></strong></div>
             <div><i class="fa-solid fa-calendar-minus"></i><span>Upcoming leaves</span><strong><%= upcomingAdminLeaves.length %></strong></div>
             <div><i class="fa-solid fa-chart-line"></i><span>Monthly work progress</span><strong><%= monthly.productivityScore || 0 %>%</strong></div>
+          </div>
+        </aside>
+      </section>
+      <section class="dashboard-grid reveal">
+        <article class="panel">
+          <div class="panel-header"><div><p class="eyebrow">Face Recognition</p><h2>Latest Face Recognition Events</h2></div></div>
+          <div class="ranking-list">
+            <% faceEvents.slice(0, 6).forEach((record) => { %>
+              <div><i class="fa-solid fa-camera"></i><span><%= record.student ? record.student.name : record.faceLabel %></span><strong><%= Number(record.matchAccuracy || record.confidence || 0).toFixed(2) %></strong></div>
+            <% }) %>
+            <% if (faceEvents.length === 0) { %><div><i class="fa-solid fa-camera"></i><span>No face scan events yet</span><strong>0</strong></div><% } %>
+          </div>
+        </article>
+        <aside class="panel">
+          <div class="panel-header"><div><p class="eyebrow">Live Activity</p><h2>Live Activity Timeline</h2></div></div>
+          <div class="timeline-stream">
+            <% (liveSessions || []).slice(0, 8).forEach((session) => { const lastEvent = (session.events || []).slice(-1)[0]; %>
+              <div class="event-row"><span class="event-dot"></span><strong><%= session.employee ? session.employee.name : 'Employee' %> - <%= lastEvent ? lastEvent.type : session.status %></strong><p><%= lastEvent ? new Date(lastEvent.occurredAt).toLocaleString() : '-' %> - <%= session.deviceState || session.status %></p></div>
+            <% }) %>
+            <% if (!liveSessions || liveSessions.length === 0) { %><div><span class="event-dot"></span><strong>No live sessions</strong><p>Waiting for attendance or activity events.</p></div><% } %>
           </div>
         </aside>
       </section>

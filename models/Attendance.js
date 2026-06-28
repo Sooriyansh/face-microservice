@@ -15,9 +15,21 @@ const attendanceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    matchAccuracy: {
+      type: Number,
+      default: 0,
+    },
     markedAt: {
       type: Date,
       default: Date.now,
+    },
+    joinTime: {
+      type: Date,
+      default: null,
+    },
+    checkOutTime: {
+      type: Date,
+      default: null,
     },
     dateKey: {
       type: String,
@@ -26,6 +38,34 @@ const attendanceSchema = new mongoose.Schema(
     status: {
       type: String,
       default: 'Present',
+    },
+    attendanceStatus: {
+      type: String,
+      default: 'Present',
+      trim: true,
+    },
+    deviceName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    recognitionMethod: {
+      type: String,
+      default: 'Face Recognition',
+      trim: true,
+    },
+    lateByMinutes: {
+      type: Number,
+      default: 0,
+    },
+    lateStatus: {
+      type: String,
+      default: 'On Time',
+      trim: true,
+    },
+    overtimeMinutes: {
+      type: Number,
+      default: 0,
     },
     location: {
       latitude: {

@@ -1,3 +1,5 @@
+const { calculateScheduleState } = require('./workSchedule');
+
 const STANDARD_SHIFT_MS = 8 * 60 * 60 * 1000;
 
 function toDateKey(date = new Date()) {
@@ -17,10 +19,12 @@ function calculateLeaveDays(startDate, endDate, leaveType) {
   return Math.max(days, 1);
 }
 
-function calculateSessionMetrics(session, checkoutAt = new Date()) {
+function calculateSessionMetrics(session, checkoutAt = new Date(), schedule = null) {
   const startedAt = session.startedAt || session.attendanceTime;
   const totalWorkingMs = startedAt ? Math.max(new Date(checkoutAt).getTime() - new Date(startedAt).getTime(), 0) : 0;
-  const overtimeMs = Math.max(totalWorkingMs - STANDARD_SHIFT_MS, 0);
+  const scheduleState = schedule && startedAt ? calculateScheduleState(schedule, startedAt, checkoutAt) : null;
+  const standardShiftMs = scheduleState?.standardShiftMs || Number(session.standardShiftMs || STANDARD_SHIFT_MS);
+  const overtimeMs = scheduleState ? scheduleState.overtimeMs : Math.max(totalWorkingMs - standardShiftMs, 0);
   const day = new Date(session.dateKey || checkoutAt).getDay();
   const weekendMs = day === 0 || day === 6 ? totalWorkingMs : 0;
 
@@ -31,7 +35,7 @@ function calculateSessionMetrics(session, checkoutAt = new Date()) {
     overtimeMs,
     weekendMs,
     holidayMs: 0,
-    standardShiftMs: STANDARD_SHIFT_MS,
+    standardShiftMs,
   };
 }
 

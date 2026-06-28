@@ -59,21 +59,28 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Employee</th><th>Employee Face ID</th><th>Marked At</th><th>Match Accuracy</th><th>Location</th><th>Status</th></tr></thead>
+            <thead><tr><th>Employee</th><th>Employee ID</th><th>Employee Face ID</th><th>Department</th><th>Date</th><th>Join Time</th><th>Check Out Time</th><th>Match Accuracy</th><th>Status</th><th>Device</th><th>Location</th><th>Method</th><th>Created</th></tr></thead>
             <tbody id="attendance-page-body">
-              <% if (safeRecords.length === 0) { %><tr><td colspan="6">No attendance records found.</td></tr><% } %>
+              <% if (safeRecords.length === 0) { %><tr><td colspan="13">No attendance records found.</td></tr><% } %>
               <% safeRecords.forEach((record) => { %>
                 <tr>
                   <td><%= record.student ? record.student.name : record.faceLabel %></td>
+                  <td><%= record.student ? (record.student.rollNumber || record.student._id) : '-' %></td>
                   <td><code><%= record.faceLabel %></code></td>
-                  <td><%= new Date(record.markedAt).toLocaleString() %></td>
-                  <td><%= Number(record.confidence || 0).toFixed(3) %></td>
+                  <td><%= record.student ? (record.student.department || '-') : '-' %></td>
+                  <td><%= record.dateKey || new Date(record.markedAt).toISOString().slice(0, 10) %></td>
+                  <td><%= new Date(record.joinTime || record.markedAt).toLocaleString() %></td>
+                  <td><%= record.checkOutTime ? new Date(record.checkOutTime).toLocaleString() : '-' %></td>
+                  <td><%= Number(record.matchAccuracy || record.confidence || 0).toFixed(3) %></td>
+                  <td><span class="security-badge"><%= record.attendanceStatus || record.status || 'Present' %><%= record.lateByMinutes ? ` (${record.lateByMinutes}m late)` : '' %></span></td>
+                  <td><%= record.deviceName || '-' %></td>
                   <td>
                     <% if (record.location && record.location.latitude != null && record.location.longitude != null) { %>
                       <a href="https://www.google.com/maps?q=<%= record.location.latitude %>,<%= record.location.longitude %>" target="_blank" rel="noopener noreferrer"><%= Number(record.location.latitude).toFixed(5) %>, <%= Number(record.location.longitude).toFixed(5) %></a>
                     <% } else { %>-<% } %>
                   </td>
-                  <td><span class="security-badge">Present</span></td>
+                  <td><%= record.recognitionMethod || 'Face Recognition' %></td>
+                  <td><%= new Date(record.createdAt || record.markedAt).toLocaleString() %></td>
                 </tr>
               <% }) %>
             </tbody>

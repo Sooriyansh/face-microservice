@@ -95,5 +95,8 @@ const systemEventSchema = new mongoose.Schema(
 systemEventSchema.index({ event: 1, occurredAt: -1 });
 systemEventSchema.index({ employee: 1, occurredAt: -1 });
 systemEventSchema.index({ user: 1, occurredAt: -1 });
+systemEventSchema.index({ employeeId: 1, occurredAt: -1 });
+systemEventSchema.index({ employeeName: 1, occurredAt: -1 });
+systemEventSchema.index({ sourceLog: 1, eventId: 1, recordNumber: 1 });
 
 module.exports = mongoose.model('SystemEvent', systemEventSchema);

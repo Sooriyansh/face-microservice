@@ -2,6 +2,7 @@ const express = require('express');
 
 const SystemEvent = require('../../models/SystemEvent');
 const Student = require('../../models/Student');
+const WorkSession = require('../../models/WorkSession');
 const { rowsToCsv } = require('../../services/hrms');
 const { recordTrackingEvent } = require('../../services/workSessions');
 
@@ -131,6 +132,15 @@ function normalizeSystemEvent(rawEvent) {
   };
 }
 
+function dateOnlyRange(value) {
+  if (!value) return null;
+  const start = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
 function escapeRegex(value) {
   return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -206,9 +216,13 @@ router.get('/', async (req, res, next) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
     const mode = String(req.query.mode || '').trim();
     const selectedUser = String(req.query.user || '').trim();
+    const selectedEmployee = String(req.query.employee || '').trim();
+    const selectedDepartment = String(req.query.department || '').trim();
+    const selectedDate = String(req.query.date || '').trim();
     const workdayRange = getWorkdayRange();
-    const from = parseDateQuery(req.query.from) || (mode === 'workday' ? workdayRange.start : null);
-    const to = parseDateQuery(req.query.to) || (mode === 'workday' ? workdayRange.end : null);
+    const dateRange = dateOnlyRange(selectedDate);
+    const from = dateRange?.start || parseDateQuery(req.query.from) || (mode === 'workday' ? workdayRange.start : null);
+    const to = dateRange?.end || parseDateQuery(req.query.to) || (mode === 'workday' ? workdayRange.end : null);
     const sortDirection = String(req.query.sort || '').toLowerCase() === 'asc' ? 1 : -1;
 
     const query = {};
@@ -221,8 +235,21 @@ router.get('/', async (req, res, next) => {
         query.occurredAt.$lte = to;
       }
     }
-    if (selectedUser) {
-      query.$or = compactOrQuery([{ user: selectedUser }, { employeeName: selectedUser }, { employeeId: selectedUser }]);
+    if (selectedDepartment) {
+      const employees = await Student.find({ department: selectedDepartment }).select('_id rollNumber name').lean();
+      query.$or = employees.flatMap((employee) => compactOrQuery([
+        { employee: employee._id },
+        { employeeId: employee.rollNumber || '' },
+        { employeeName: employee.name || '' },
+        { user: employee.name || '' },
+      ]));
+      if (!query.$or.length) query.$or = [{ user: /.^/ }];
+    } else if (selectedEmployee || selectedUser) {
+      const selected = selectedEmployee || selectedUser;
+      const employee = selected.match(/^[a-f\d]{24}$/i) ? await Student.findById(selected).lean() : null;
+      query.$or = employee
+        ? compactOrQuery([{ employee: employee._id }, { employeeId: employee.rollNumber || '' }, { employeeName: employee.name || '' }, { user: employee.name || '' }])
+        : compactOrQuery([{ user: selected }, { employeeName: selected }, { employeeId: selected }]);
     }
 
     if (req.user?.role === 'employee') {
@@ -237,9 +264,43 @@ router.get('/', async (req, res, next) => {
       .limit(limit)
       .lean();
 
+    const sessionQuery = {};
+    if (selectedDate) sessionQuery.dateKey = selectedDate;
+    if (selectedEmployee?.match(/^[a-f\d]{24}$/i)) sessionQuery.employee = selectedEmployee;
+    const sessions = await WorkSession.find(sessionQuery).sort({ dateKey: -1, updatedAt: -1 }).limit(200).populate('employee').lean();
+    const sessionEvents = sessions.flatMap((session) => (session.events || []).map((event) => ({
+      event: event.type,
+      meaning: event.message,
+      occurredAt: event.occurredAt,
+      eventId: event.metadata?.eventId || 0,
+      sourceLog: event.deviceInfo || 'WorkSession',
+      provider: event.category || 'session',
+      computer: event.deviceInfo || '',
+      employee: session.employee?._id || session.employee,
+      employeeId: session.employee?.rollNumber || '',
+      employeeName: session.employee?.name || '',
+      department: session.employee?.department || '',
+      user: session.employee?.name || '',
+      durationMs: event.metadata?.durationMs || 0,
+      status: event.metadata?.status || session.status,
+      message: event.message,
+      externalId: event.metadata?.externalId || `${session._id}:${event.type}:${new Date(event.occurredAt).getTime()}`,
+    }))).filter((event) => {
+      const time = new Date(event.occurredAt).getTime();
+      return (!from || time >= from.getTime()) && (!to || time <= to.getTime())
+        && (!selectedDepartment || event.department === selectedDepartment)
+        && (!selectedEmployee || String(event.employee) === selectedEmployee);
+    });
+
+    const mergedEvents = [...events, ...sessionEvents]
+      .sort((a, b) => sortDirection === 1
+        ? new Date(a.occurredAt) - new Date(b.occurredAt)
+        : new Date(b.occurredAt) - new Date(a.occurredAt))
+      .slice(0, limit);
+
     res.json({
       success: true,
-      events,
+      events: mergedEvents,
       range: {
         start: from,
         end: to,
@@ -260,15 +321,28 @@ router.get('/export/:type', async (req, res, next) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 500, 1), 1000);
     const from = parseDateQuery(req.query.from);
     const to = parseDateQuery(req.query.to);
+    const dateRange = dateOnlyRange(String(req.query.date || ''));
     const query = {};
-    if (from || to) {
+    if (dateRange || from || to) {
       query.occurredAt = {};
-      if (from) query.occurredAt.$gte = from;
-      if (to) query.occurredAt.$lte = to;
+      if (dateRange?.start || from) query.occurredAt.$gte = dateRange?.start || from;
+      if (dateRange?.end || to) query.occurredAt.$lte = dateRange?.end || to;
     }
-    if (req.query.user) {
-      const selectedUser = String(req.query.user);
-      query.$or = compactOrQuery([{ user: selectedUser }, { employeeName: selectedUser }, { employeeId: selectedUser }]);
+    if (req.query.department) {
+      const employees = await Student.find({ department: String(req.query.department) }).select('_id rollNumber name').lean();
+      query.$or = employees.flatMap((employee) => compactOrQuery([
+        { employee: employee._id },
+        { employeeId: employee.rollNumber || '' },
+        { employeeName: employee.name || '' },
+        { user: employee.name || '' },
+      ]));
+      if (!query.$or.length) query.$or = [{ user: /.^/ }];
+    } else if (req.query.employee || req.query.user) {
+      const selectedUser = String(req.query.employee || req.query.user);
+      const employee = selectedUser.match(/^[a-f\d]{24}$/i) ? await Student.findById(selectedUser).lean() : null;
+      query.$or = employee
+        ? compactOrQuery([{ employee: employee._id }, { employeeId: employee.rollNumber || '' }, { employeeName: employee.name || '' }, { user: employee.name || '' }])
+        : compactOrQuery([{ user: selectedUser }, { employeeName: selectedUser }, { employeeId: selectedUser }]);
     }
     const events = await SystemEvent.find(query).sort({ occurredAt: -1 }).limit(limit).lean();
     return sendSystemEventsExport(res, req.params.type, events);

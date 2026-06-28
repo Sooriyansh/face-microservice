@@ -5,6 +5,7 @@ const Notification = require('../../models/Notification');
 const Student = require('../../models/Student');
 const SystemEvent = require('../../models/SystemEvent');
 const WorkSession = require('../../models/WorkSession');
+const { getWorkSchedule } = require('../../services/workSchedule');
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 
@@ -277,6 +278,19 @@ async function dashboard(req, res, next) {
     ]);
     const systemEventCount = await SystemEvent.countDocuments();
     const performanceOverview = await buildPerformanceOverview({ todayKey, students, liveSessions });
+    const liveSessionStatuses = liveSessions.map((session) => ({
+      status: session.status,
+      liveStatus: session.status === 'checked_out' ? 'checked_out' : session.deviceState === 'Sleep Mode' ? 'sleep' : session.status,
+    }));
+    const dashboardActivityCounts = {
+      todayAttendance: todayAttendanceCount,
+      currentlyOnline: liveSessionStatuses.filter((row) => ['active', 'idle', 'sleep', 'break'].includes(row.liveStatus)).length,
+      offline: Math.max(students.length - liveSessions.filter((session) => session.status !== 'checked_out').length, 0),
+      working: liveSessionStatuses.filter((row) => row.liveStatus === 'active').length,
+      idle: liveSessionStatuses.filter((row) => row.liveStatus === 'idle').length,
+      sleeping: liveSessionStatuses.filter((row) => row.liveStatus === 'sleep').length,
+      checkedOut: liveSessionStatuses.filter((row) => row.liveStatus === 'checked_out').length,
+    };
 
     res.render('admin/dashboard', {
       studentCount,
@@ -287,6 +301,8 @@ async function dashboard(req, res, next) {
       systemEventCount,
       liveSessions,
       performanceOverview,
+      dashboardActivityCounts,
+      latestFaceRecognitionEvents: recentAttendance,
       latestNotifications,
       upcomingLeaves,
     });
@@ -314,7 +330,7 @@ async function systemEventsPage(req, res, next) {
     const rangeEnd = now < workdayEnd ? now : workdayEnd;
 
     const [systemEvents, students, liveSessions] = await Promise.all([
-      SystemEvent.find({ occurredAt: { $gte: workdayStart, $lte: rangeEnd } }).sort({ occurredAt: 1 }).limit(500).lean(),
+      SystemEvent.find().sort({ occurredAt: -1 }).limit(100).lean(),
       Student.find().sort({ name: 1 }).lean(),
       WorkSession.find({ dateKey: now.toISOString().slice(0, 10) }).populate('employee').populate('attendance').lean(),
     ]);
@@ -484,7 +500,9 @@ async function notificationsPage(req, res, next) {
 }
 
 function settingsPage(req, res) {
-  res.render('admin/settings');
+  getWorkSchedule()
+    .then((workSchedule) => res.render('admin/settings', { workSchedule }))
+    .catch((error) => res.render('admin/settings', { workSchedule: null, scheduleError: error.message }));
 }
 
 module.exports = {

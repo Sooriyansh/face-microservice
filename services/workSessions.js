@@ -4,6 +4,7 @@ const SystemEvent = require('../models/SystemEvent');
 const Student = require('../models/Student');
 const { calculateSessionMetrics } = require('./hrms');
 const { notifyAdmins } = require('./notifications');
+const { calculateScheduleState, getWorkSchedule } = require('./workSchedule');
 
 function recordHrmsEvent(fields) {
   return SystemEvent.create({
@@ -32,7 +33,7 @@ function formatDeviceInfo(event = {}) {
 }
 
 function mapEventCategory(type) {
-  if (['Attendance Started', 'Face Attendance Marked', 'Late Login', 'Early Logout', 'Check-Out Completed'].includes(type)) {
+  if (['Attendance Started', 'Face Attendance Marked', 'Late Login', 'Early Logout', 'Check-Out Completed', 'Attendance Marked', 'Face Scan'].includes(type)) {
     return 'attendance';
   }
 
@@ -54,7 +55,7 @@ function mapEventCategory(type) {
     return 'productivity';
   }
 
-  if (['Session Started', 'Session Incomplete', 'Session Closed'].includes(type)) {
+  if (['Session Started', 'Session Incomplete', 'Session Closed', 'Join Work', 'Check Out', 'Overtime Started', 'Overtime Ended'].includes(type)) {
     return 'session';
   }
 
@@ -67,12 +68,12 @@ function normalizeEventType(type) {
     Shutdown: 'Shutdown',
     'Unexpected Shutdown': 'Abrupt Shutdown',
     Restart: 'Restart',
-    Sleep: 'Sleep Mode',
-    Wakeup: 'Wakeup',
-    Lock: 'Screen Lock',
-    Unlock: 'Screen Unlock',
-    Login: 'Login',
-    Logout: 'Logout',
+    Sleep: 'Sleep',
+    Wakeup: 'Wake Up',
+    Lock: 'Lock',
+    Unlock: 'Unlock',
+    Login: 'Windows Login',
+    Logout: 'Windows Logout',
     'Display On': 'Display On',
     'Display Off': 'Display Off',
     'User Session Start': 'User Session Start',
@@ -143,7 +144,7 @@ function calculateProductivityScore(session) {
 
   const events = session.events || [];
   const productiveEvents = events.filter((event) => event.category === 'productivity' || event.category === 'system').length;
-  const idleEvents = events.filter((event) => ['Idle Time', 'Inactive Duration', 'Sleep Mode', 'Screen Lock'].includes(event.type)).length;
+  const idleEvents = events.filter((event) => ['Idle Time', 'Inactive Duration', 'Sleep', 'Lock'].includes(event.type)).length;
   const score = Math.round(Math.min(100, Math.max(0, 72 + productiveEvents * 2 - idleEvents * 5)));
   return Number.isFinite(score) ? score : 0;
 }
@@ -167,7 +168,7 @@ function deriveSessionStatus(session, now = new Date()) {
     return 'idle';
   }
 
-  if (session.deviceState === 'Sleep Mode') {
+  if (session.deviceState === 'Sleep') {
     return 'sleep';
   }
 
@@ -176,9 +177,11 @@ function deriveSessionStatus(session, now = new Date()) {
 
 async function startSessionAfterAttendance({ employee, attendance, attendanceTime = new Date() }) {
   const dateKey = getDateKey(attendanceTime);
-  const trackingStart = getTrackingStart(attendanceTime);
+  const schedule = await getWorkSchedule();
+  const scheduleState = calculateScheduleState(schedule, attendanceTime);
+  const trackingStart = scheduleState.joinDeadline;
   const startedAt = attendanceTime > trackingStart ? attendanceTime : trackingStart;
-  const isLate = attendanceTime > trackingStart;
+  const isLate = scheduleState.lateMs > 0;
 
   const existing = await WorkSession.findOne({ employee: employee._id, dateKey });
   if (existing) {
@@ -189,6 +192,10 @@ async function startSessionAfterAttendance({ employee, attendance, attendanceTim
     existing.attendance = attendance?._id || existing.attendance;
     existing.attendanceTime = attendanceTime;
     existing.startedAt = existing.startedAt || startedAt;
+    existing.lateMs = existing.lateMs || scheduleState.lateMs;
+    existing.lateByMinutes = existing.lateByMinutes || scheduleState.lateByMinutes;
+    existing.lateStatus = existing.lateStatus || scheduleState.lateStatus;
+    existing.standardShiftMs = scheduleState.standardShiftMs;
     existing.status = deriveSessionStatus(existing);
     existing.deviceState = existing.deviceState || 'Monitoring Active';
     existing.lastActivityAt = existing.lastActivityAt || attendanceTime;
@@ -225,7 +232,7 @@ async function startSessionAfterAttendance({ employee, attendance, attendanceTim
     events.push({
       type: 'Late Login',
       category: 'attendance',
-      message: 'Attendance was marked after the 08:00 AM tracking window.',
+      message: `Attendance was marked ${scheduleState.lateByMinutes} minute(s) late.`,
       occurredAt: attendanceTime,
       deviceInfo: 'Attendance Policy',
     });
@@ -241,6 +248,10 @@ async function startSessionAfterAttendance({ employee, attendance, attendanceTim
     attendanceTime,
     startedAt,
     lastActivityAt: attendanceTime,
+    lateMs: scheduleState.lateMs,
+    lateByMinutes: scheduleState.lateByMinutes,
+    lateStatus: scheduleState.lateStatus,
+    standardShiftMs: scheduleState.standardShiftMs,
     productivityScore: 78,
     events,
   });
@@ -293,6 +304,9 @@ async function joinWorkSession({ employee, dailyPlan, joinedAt = new Date() }) {
 
   await session.save();
   await recordHrmsEvent({
+    employee: employee._id,
+    employeeId: employee.rollNumber || '',
+    employeeName: employee.name,
     user: employee.name,
     event: 'Employee Joined Work',
     meaning: `${employee.name} started a work session.`,
@@ -355,15 +369,15 @@ async function recordTrackingEvent(rawEvent) {
       status: rawEvent.status,
     },
   });
-  if (!['Idle Time', 'Idle State', 'Inactive Duration', 'Display Off', 'Sleep Mode', 'Screen Lock'].includes(type)) {
+  if (!['Idle Time', 'Idle State', 'Inactive Duration', 'Display Off', 'Sleep', 'Lock'].includes(type)) {
     session.lastActivityAt = occurredAt;
   }
-  session.deviceState = ['Sleep Mode', 'Screen Lock', 'Display Off'].includes(type) ? type : isAbruptShutdown ? 'Offline' : 'Online';
+  session.deviceState = ['Sleep', 'Lock', 'Display Off'].includes(type) ? type : isAbruptShutdown ? 'Offline' : 'Online';
   session.status = isAbruptShutdown
     ? 'incomplete'
-    : ['Idle Time', 'Idle State', 'Inactive Duration', 'Display Off', 'Screen Lock'].includes(type)
+    : ['Idle Time', 'Idle State', 'Inactive Duration', 'Display Off', 'Lock'].includes(type)
       ? 'idle'
-      : type === 'Sleep Mode'
+      : type === 'Sleep'
         ? 'sleep'
         : 'active';
   session.incompleteReason = isAbruptShutdown ? 'Laptop shut down before checkout.' : session.incompleteReason;
@@ -390,7 +404,7 @@ async function recordTrackingEvent(rawEvent) {
     session.idleMs += durationMs;
   }
 
-  if (type === 'Sleep Mode') {
+  if (type === 'Sleep') {
     session.sleepMs += durationMs;
   }
 
@@ -454,7 +468,9 @@ async function checkoutSession(sessionId, reportInput = {}) {
   }
 
   const now = new Date();
-  const metrics = calculateSessionMetrics(session, now);
+  const schedule = await getWorkSchedule();
+  const metrics = calculateSessionMetrics(session, now, schedule);
+  const scheduleState = calculateScheduleState(schedule, session.startedAt || session.attendanceTime || now, now);
   session.status = 'checked_out';
   session.deviceState = 'Checked Out';
   session.checkoutAt = now;
@@ -465,6 +481,9 @@ async function checkoutSession(sessionId, reportInput = {}) {
   session.additionalNotes = additionalNotes;
   session.totalWorkingMs = metrics.totalWorkingMs;
   session.overtimeMs = metrics.overtimeMs;
+  session.lateMs = session.lateMs || scheduleState.lateMs;
+  session.lateByMinutes = session.lateByMinutes || scheduleState.lateByMinutes;
+  session.lateStatus = session.lateStatus || scheduleState.lateStatus;
   session.weekendMs = metrics.weekendMs;
   session.holidayMs = metrics.holidayMs;
   session.standardShiftMs = metrics.standardShiftMs;
@@ -505,7 +524,20 @@ async function checkoutSession(sessionId, reportInput = {}) {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
+  if (session.attendance) {
+    await require('../models/Attendance').findByIdAndUpdate(session.attendance, {
+      checkOutTime: now,
+      overtimeMinutes: Math.round(metrics.overtimeMs / 60000),
+      lateByMinutes: session.lateByMinutes,
+      lateStatus: session.lateStatus,
+      attendanceStatus: session.lateStatus === 'Late' ? 'Present - Late' : 'Present',
+    }).catch(() => {});
+  }
+
   await recordHrmsEvent({
+    employee: session.employee?._id || session.employee,
+    employeeId: session.employee?.rollNumber || '',
+    employeeName: session.employee?.name || 'Employee',
     user: session.employee?.name || 'Employee',
     event: metrics.overtimeMs > 0 ? 'Employee Worked Overtime' : 'Daily Report Submitted',
     meaning:

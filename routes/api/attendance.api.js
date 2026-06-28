@@ -5,6 +5,7 @@ const { runRecognition } = require('../../services/faceRecognition');
 const { rowsToCsv } = require('../../services/hrms');
 const { notifyEmployee } = require('../../services/notifications');
 const { startSessionAfterAttendance } = require('../../services/workSessions');
+const { calculateScheduleState, getWorkSchedule } = require('../../services/workSchedule');
 
 const router = express.Router();
 
@@ -63,7 +64,7 @@ function normalizeLocation(location) {
 }
 
 async function markAttendanceForLabel(faceLabel, confidence = 0, markedAt, location) {
-  const student = await Student.findOne({ faceLabel });
+  const student = await Student.findOne({ faceLabel: String(faceLabel).trim() });
 
   if (!student) {
     return {
@@ -77,6 +78,8 @@ async function markAttendanceForLabel(faceLabel, confidence = 0, markedAt, locat
 
   const attendanceTime = markedAt ? new Date(markedAt) : new Date();
   const dateKey = attendanceTime.toISOString().slice(0, 10);
+  const schedule = await getWorkSchedule();
+  const scheduleState = calculateScheduleState(schedule, attendanceTime);
 
   const existing = await Attendance.findOne({
     student: student._id,
@@ -105,8 +108,15 @@ async function markAttendanceForLabel(faceLabel, confidence = 0, markedAt, locat
     student: student._id,
     faceLabel,
     confidence,
+    matchAccuracy: confidence,
     markedAt: attendanceTime,
+    joinTime: attendanceTime,
     dateKey,
+    attendanceStatus: scheduleState.lateStatus === 'Late' ? 'Present - Late' : 'Present',
+    deviceName: 'Employee Camera',
+    recognitionMethod: 'Face Recognition',
+    lateByMinutes: scheduleState.lateByMinutes,
+    lateStatus: scheduleState.lateStatus,
     location: normalizeLocation(location),
   });
 
@@ -138,11 +148,14 @@ async function markAttendanceForLabel(faceLabel, confidence = 0, markedAt, locat
 
 router.get('/', async (req, res, next) => {
   try {
-    const dateKey = req.query.date || new Date().toISOString().slice(0, 10);
+    const dateKey = req.query.date || '';
     const employee = req.user?.role === 'employee' ? await Student.findOne({ email: req.user.email }).lean() : null;
-    const query = employee ? { dateKey, student: employee._id } : { dateKey };
+    const query = {};
+    if (employee) query.student = employee._id;
+    if (dateKey) query.dateKey = dateKey;
     const records = await Attendance.find(query)
       .sort({ markedAt: -1 })
+      .limit(req.user?.role === 'admin' && !dateKey ? 500 : 100)
       .populate('student')
       .lean();
 
@@ -158,8 +171,8 @@ router.get('/export/:type', async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Only admin can export attendance logs.' });
     }
 
-    const dateKey = req.query.date || new Date().toISOString().slice(0, 10);
-    const records = await Attendance.find({ dateKey }).sort({ markedAt: -1 }).populate('student').lean();
+    const query = req.query.date ? { dateKey: req.query.date } : {};
+    const records = await Attendance.find(query).sort({ markedAt: -1 }).limit(2000).populate('student').lean();
     return sendAttendanceExport(res, req.params.type, records);
   } catch (error) {
     next(error);

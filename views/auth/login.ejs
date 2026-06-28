@@ -90,8 +90,10 @@
               <div class="face-guide"><span></span><span></span><span></span><span></span></div>
             </div>
             <div class="quality-grid">
-              <div><strong id="employee-login-confidence">Match accuracy 0%</strong><span>Face match accuracy</span></div>
+              <div><strong id="employee-login-confidence">Match Accuracy 0.0%</strong><span>Face match accuracy</span></div>
               <div><strong id="employee-login-state">Real person check ready</strong><span>Real person and face position check</span></div>
+              <div><strong id="employee-login-light-state">Lighting pending</strong><span>Lighting check</span></div>
+              <div><strong id="employee-login-quality-state">Quality pending</strong><span>Blur and clarity check</span></div>
             </div>
             <div class="auth-feature-grid">
               <span><i class="fa-solid fa-video"></i> Live Camera Preview</span>
@@ -103,6 +105,7 @@
               <button type="button" id="start-employee-face-login" class="btn btn-primary"><i class="fa-solid fa-fingerprint"></i> Start Face Scan</button>
               <button type="button" id="retry-employee-face-login" class="btn btn-secondary"><i class="fa-solid fa-rotate-right"></i> Scan Again</button>
             </div>
+            <p id="employee-face-login-loader" class="loading-skeleton"></p>
             <p id="employee-face-login-status" class="form-status">Start the camera, then keep your face inside the frame to sign in securely.</p>
           </div>
         </section>

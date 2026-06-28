@@ -3,6 +3,7 @@ const express = require('express');
 const Student = require('../../models/Student');
 const { deleteImages, uploadImageBuffer } = require('../../services/cloudinary');
 const { tryRebuildFaceModelFromCloud } = require('../../services/faceModel');
+const { stopWorkerProcess } = require('../../services/faceRecognition');
 
 const router = express.Router();
 
@@ -94,6 +95,9 @@ router.post('/', async (req, res, next) => {
         enrollmentStatus: 'Pending',
       });
       const modelBuild = await tryRebuildFaceModelFromCloud();
+      if (modelBuild.success) {
+        stopWorkerProcess();
+      }
       if (!modelBuild.success) {
         student.enrollmentReviewNote = `Biometric images stored in Cloudinary. Model rebuild warning: ${modelBuild.message}`;
         await student.save();
@@ -162,6 +166,9 @@ router.put('/:studentId/enrollment', async (req, res, next) => {
       student.enrollmentReviewNote = 'Updated by employee from biometric scanner.';
       await student.save();
       const modelBuild = await tryRebuildFaceModelFromCloud();
+      if (modelBuild.success) {
+        stopWorkerProcess();
+      }
       if (!modelBuild.success) {
         student.enrollmentReviewNote = `Updated images stored in Cloudinary. Model rebuild warning: ${modelBuild.message}`;
         await student.save();

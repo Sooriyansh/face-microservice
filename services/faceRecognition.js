@@ -197,4 +197,5 @@ async function runRecognition(imageBuffer) {
 module.exports = {
   getWorkerProcess,
   runRecognition,
+  stopWorkerProcess,
 };

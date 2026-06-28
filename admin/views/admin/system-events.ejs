@@ -50,13 +50,14 @@
       </section>
 
       <section class="control-panel reveal">
-        <div class="filter-controls"><label>Date & Time Filter</label><input type="datetime-local" id="system-events-from"><input type="datetime-local" id="system-events-to"></div>
+        <div class="filter-controls"><label>Search by Date</label><input type="date" id="system-events-date"></div>
         <div class="filter-controls all-users-control">
-          <label for="user-filter">All Employees</label>
-          <select id="user-filter"><option value="">All Employees</option></select>
+          <label for="user-filter">Search by Employee</label>
+          <select id="user-filter"><option value="">All Employees</option><% safeStudents.forEach((student) => { %><option value="<%= student._id %>"><%= student.name %> (<%= student.rollNumber || student.faceLabel %>)</option><% }) %></select>
         </div>
         <div class="filter-controls"><label>Department</label><select id="department-filter"><option value="">All departments</option><% [...new Set(safeStudents.map((s) => s.department).filter(Boolean))].forEach((department) => { %><option><%= department %></option><% }) %></select></div>
-        <div class="filter-controls"><label>Status</label><select id="online-filter"><option value="">Online/offline</option><option>Online</option><option>Offline</option></select></div>
+        <div class="filter-controls"><label>&nbsp;</label><button id="system-events-search" class="btn btn-primary" type="button"><i class="fa-solid fa-magnifying-glass"></i> Search</button></div>
+        <div class="filter-controls"><label>&nbsp;</label><button id="system-events-reset" class="btn btn-secondary" type="button"><i class="fa-solid fa-rotate-left"></i> Reset</button></div>
       </section>
 
       <section class="metric-grid compact reveal">
@@ -81,7 +82,7 @@
           <div class="employee-filter-list">
             <% if (safeStudents.length === 0) { %><p class="helper-text">No registered employees yet.</p><% } %>
             <% safeStudents.forEach((student, index) => { %>
-              <button class="employee-filter-card" type="button" data-user="<%= student.name %>" data-department="<%= student.department || '' %>" data-status="<%= index % 3 === 0 ? 'Offline' : 'Online' %>">
+              <button class="employee-filter-card" type="button" data-user="<%= student._id %>" data-department="<%= student.department || '' %>" data-status="<%= index % 3 === 0 ? 'Offline' : 'Online' %>">
                 <span class="avatar"><%= student.name.slice(0,2).toUpperCase() %></span>
                 <span><strong><%= student.name %></strong><small><%= student.department || 'General' %> · Last active <%= index + 2 %>m ago</small></span>
                 <span class="<%= index % 3 === 0 ? 'status-offline' : 'status-online' %>"><%= index % 3 === 0 ? 'Offline' : 'Online' %></span>
